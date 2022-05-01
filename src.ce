@@ -1,6 +1,0 @@
-import "name"
-
-func main() {
-
-    return 1
-}
