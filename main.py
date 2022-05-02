@@ -1,11 +1,11 @@
 import lexer
+import parser
 
 def main():
-    with open("src.ce", "r+") as f:
-        s = f.read()
-        tokens = lexer.tokenize(s)
-        for t in tokens:
-            print(t.lexeme)
+    with open("main.ce", "r+") as f:
+        tokens = lexer.tokenize(f.read())
+        stmts  = parser.parse(tokens)
+        print(stmts)
 
 if __name__ == "__main__":
     main()

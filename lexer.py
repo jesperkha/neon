@@ -80,7 +80,7 @@ def tokenize(source: str) -> list[Token]:
                     break
                 idx += 1
 
-            if dot > 1:
+            if dot > 1 or num.endswith("."):
                 err(f"invalid number literal '{num}', line {line}")
             if num.replace(".", "").isdecimal():
                 token_list.append(Token(tokens.NUMBER, num, line))
