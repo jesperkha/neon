@@ -1,18 +1,8 @@
-import tokens
-
-def err(msg: str) -> None:
-    print(msg)
-    exit(1)
-
-class Token:
-    def __init__(self, type: int, lexeme: str, line: int) -> None:
-        self.lexeme = lexeme
-        self.line   = line
-        self.type   = type
+from util import *
+from tokens import *
 
 def tokenize(source: str) -> list[Token]:
     "returns a list of `Token` with `type`, `lexeme`, and `line` properties. string lexemes include the quotes"
-
     token_list = []
     line = 1
     idx = -1
@@ -24,12 +14,12 @@ def tokenize(source: str) -> list[Token]:
 
         # newline
         if char == "\n":
-            token_list.append(Token(tokens.NEWLINE, "NEWLINE", line))
+            token_list.append(Token(NEWLINE, "NEWLINE", line))
             line += 1
             continue
 
         # ignored whitespace
-        if char in tokens.whitespace_lookup:
+        if char in whitespace_lookup:
             continue
 
         # strings
@@ -50,17 +40,17 @@ def tokenize(source: str) -> list[Token]:
                 err(f"unterminated string, line {line}")
 
             string += '"'
-            token_list.append(Token(tokens.STRING, string, line))
+            token_list.append(Token(STRING, string, line))
             continue
 
         # symbol
-        if char in tokens.symbol_lookup:
+        if char in symbol_lookup:
             dbtoken = char + nextchar # double token
-            if dbtoken in tokens.double_token_lookup:
-                token_list.append(Token(tokens.double_token_lookup[dbtoken], dbtoken, line))
+            if dbtoken in double_token_lookup:
+                token_list.append(Token(double_token_lookup[dbtoken], dbtoken, line))
                 idx += 1 # skip next token
             else:
-                token_list.append(Token(tokens.symbol_lookup[char], char, line))
+                token_list.append(Token(symbol_lookup[char], char, line))
             continue
 
         # number
@@ -83,7 +73,9 @@ def tokenize(source: str) -> list[Token]:
             if dot > 1 or num.endswith("."):
                 err(f"invalid number literal '{num}', line {line}")
             if num.replace(".", "").isdecimal():
-                token_list.append(Token(tokens.NUMBER, num, line))
+                t = Token(NUMBER, num, line)
+                t.isfloat = dot == 1
+                token_list.append(t)
 
             idx -= 1
             continue
@@ -99,10 +91,10 @@ def tokenize(source: str) -> list[Token]:
                     break
                 idx += 1
         
-            if word in tokens.keyword_lookup: # check if reserved keyword first
-                token_list.append(Token(tokens.keyword_lookup[word], word, line))
+            if word in keyword_lookup: # check if reserved keyword first
+                token_list.append(Token(keyword_lookup[word], word, line))
             else:
-                token_list.append(Token(tokens.IDENTIFIER, word, line))
+                token_list.append(Token(IDENTIFIER, word, line))
             idx -= 1
             continue
     
