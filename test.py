@@ -8,16 +8,19 @@ def errorif(bin: bool, msg: str):
         exit(1)
 
 expr_cases = [
-    # ["1 + 2", tokens.BINARY_EXPR],
-    ["(a)", tokens.GROUP_EXPR],
     ["a", tokens.LITERAL_EXPR],
-    ["[]", tokens.ARRAY_EXPR]
+    ["(a)", tokens.GROUP_EXPR],
+    ["[]", tokens.ARRAY_EXPR],
+    ["a + b", tokens.BINARY_EXPR],
+    ["-a", tokens.UNARY_EXPR]
 ]
 
 if __name__ == "__main__":
     for idx, c in enumerate(expr_cases):
+        print(f"expr test {idx+1}: ", end="")
         tks = lexer.tokenize(c[0])
         ast = parser.parse_expression(tks)
-        errorif(ast.type != c[1], f"failed expr test case {idx+1}: expected '{c[1]}', got '{ast.type}'")
+        errorif(ast.type != c[1], f"(FAIL) expected '{c[1]}', got '{ast.type}'")
+        print("pass")
     
-    print("test success")
+    print("--- all tests passed ---")

@@ -10,10 +10,10 @@ class Expression:
         self.type = type
         self.tokens = tokens
         self.line = line
-        self.left = None
-        self.right = None
-        self.value = None
-        self.operator = None
+        self.left: Expression = None
+        self.right: Expression = None
+        self.value: Expression = None
+        self.operator: Token = None
 
 class Statement:
     def __init__(self, type: str, expr: Expression, line: int) -> None:
@@ -28,24 +28,35 @@ def i():
     return _i
 
 # Token types
-EQUAL        = i()
-IDENTIFIER   = i()
-NUMBER       = i()
-SPACE        = i()
-NEWLINE      = i()
-TAB          = i()
-EQUAL_EQUAL  = i()
-STRING       = i()
-LEFT_PAREN   = i()
-RIGHT_PAREN  = i()
-LEFT_BRACE   = i()
-RIGHT_BRACE  = i()
-PLUS         = i()
-MINUS        = i()
-STAR         = i()
-SLASH        = i()
-LEFT_SQUARE  = i()
-RIGHT_SQUARE = i()
+EQUAL         = i()
+IDENTIFIER    = i()
+NUMBER        = i()
+SPACE         = i()
+NEWLINE       = i()
+TAB           = i()
+STRING        = i()
+LEFT_PAREN    = i()
+RIGHT_PAREN   = i()
+LEFT_BRACE    = i()
+RIGHT_BRACE   = i()
+LEFT_SQUARE   = i()
+RIGHT_SQUARE  = i()
+
+# Binary expression tokens in order of precedency
+AND           = i()
+OR            = i()
+GREATER       = i()
+LESS          = i()
+EQUAL_EQUAL   = i()
+NOT_EQUAL     = i()
+GREATER_EQUAL = i()
+LESS_EQUAL    = i()
+PLUS          = i()
+MINUS         = i()
+STAR          = i()
+SLASH         = i()
+MODULO        = i()
+NOT           = i()
 
 # Expression types
 EMPTY_EXPR   = "EMPTY_EXPR"
@@ -53,6 +64,7 @@ BINARY_EXPR  = "BINARY_EXPR"
 GROUP_EXPR   = "GROUP_EXPR"
 LITERAL_EXPR = "LITERAL_EXPR"
 ARRAY_EXPR   = "ARRAY_EXPR"
+UNARY_EXPR   = "UNARY_EXPR"
 
 # Statement types
 EXPR_STMT = "EXPR_STMT"

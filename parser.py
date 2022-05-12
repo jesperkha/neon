@@ -18,6 +18,38 @@ def parse_expression(tokens: list) -> Expression:
 
         err(f"expected literal in expression, got '{tokens[0].lexeme}', line {line}")
 
+    # unrary expression, first token is unary operator
+    if len(tokens) == 2 or tokens[1].type == LEFT_PAREN:
+        if first not in (MINUS, NOT):
+            err(f"invalid unary operator '{tokens[0].lexeme}', line {line}")
+
+        unary = Expression(UNARY_EXPR, tokens, line)
+        unary.right = parse_expression(tokens[1:])
+        unary.operator = tokens[0]
+        return unary
+
+    # binary expression in order of precedence
+    is_op = lambda typ: typ >= AND and typ <= SLASH
+    operator, op_idx = None, 0
+    for idx, t in enumerate(tokens):
+        if not is_op(t.type):
+            continue
+        # if the tokens is lower precedence split earlier
+        if not operator or (operator.type >= t.type and op_idx != idx - 1):
+            operator = t
+            op_idx = idx
+    
+    if operator:
+        if op_idx == 0 or op_idx == len(tokens)-1:
+            side = "left" if op_idx == 0 else "right"
+            err(f"expected expression on {side} side of '{operator.lexeme}', line {line}")
+
+        expr = Expression(BINARY_EXPR, tokens, line)
+        expr.left  = parse_expression(tokens[:op_idx])
+        expr.right = parse_expression(tokens[op_idx+1:])
+        expr.operator = operator
+        return expr
+
     # group expression, cannot be empty (func calls are parsed elsewhere)
     if seek(tokens, LEFT_PAREN, RIGHT_PAREN) == len(tokens)-1:
         inner = parse_expression(tokens[1:len(tokens)-1])
@@ -34,7 +66,6 @@ def parse_expression(tokens: list) -> Expression:
         array = Expression(ARRAY_EXPR, tokens, line)
         array.value = inner
         return array
-    
-    # Todo: diagnose expression issue
-    print(tokens[0].type, seek(tokens, LEFT_PAREN, RIGHT_PAREN))
+
+    # fallthrough means invalid expression
     err(f"invalid expression, line {line}")

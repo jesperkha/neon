@@ -1,11 +1,12 @@
 import lexer
 import parser
+import util
 
 def main():
-    with open("main.ce", "r+") as f:
-        tokens = lexer.tokenize(f.read())
-        stmts  = parser.parse(tokens)
-        print(stmts)
+    a = "-a - -b"
+    tok = lexer.tokenize(a)
+    expr = parser.parse_expression(tok)
+    util.inspect_expr(expr)
 
 if __name__ == "__main__":
     main()
