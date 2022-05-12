@@ -3,7 +3,7 @@ import parser
 import util
 
 def main():
-    a = "-a - -b"
+    a = "=>"
     tok = lexer.tokenize(a)
     expr = parser.parse_expression(tok)
     util.inspect_expr(expr)

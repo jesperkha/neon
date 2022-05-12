@@ -13,16 +13,15 @@ def parse_expression(tokens: list) -> Expression:
 
     # a single token list can only be a literal value
     if len(tokens) == 1:
-        if first in (STRING, NUMBER, IDENTIFIER):
+        if first in (STRING, NUMBER):
             return Expression(LITERAL_EXPR, tokens, line)
+        elif first == IDENTIFIER:
+            return Expression(VARIABLE_EXPR, tokens, line)
 
         err(f"expected literal in expression, got '{tokens[0].lexeme}', line {line}")
 
     # unrary expression, first token is unary operator
-    if len(tokens) == 2 or tokens[1].type == LEFT_PAREN:
-        if first not in (MINUS, NOT):
-            err(f"invalid unary operator '{tokens[0].lexeme}', line {line}")
-
+    if first in (MINUS, NOT) and (len(tokens) == 2 or tokens[1].type == LEFT_PAREN):
         unary = Expression(UNARY_EXPR, tokens, line)
         unary.right = parse_expression(tokens[1:])
         unary.operator = tokens[0]

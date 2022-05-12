@@ -59,12 +59,15 @@ MODULO        = i()
 NOT           = i()
 
 # Expression types
-EMPTY_EXPR   = "EMPTY_EXPR"
-BINARY_EXPR  = "BINARY_EXPR"
-GROUP_EXPR   = "GROUP_EXPR"
-LITERAL_EXPR = "LITERAL_EXPR"
-ARRAY_EXPR   = "ARRAY_EXPR"
-UNARY_EXPR   = "UNARY_EXPR"
+EMPTY_EXPR    = "EMPTY_EXPR"
+BINARY_EXPR   = "BINARY_EXPR"
+GROUP_EXPR    = "GROUP_EXPR"
+LITERAL_EXPR  = "LITERAL_EXPR"
+ARRAY_EXPR    = "ARRAY_EXPR"
+UNARY_EXPR    = "UNARY_EXPR"
+CALL_EXPR     = "CALL_EXPR"
+INDEX_EXPR    = "INDEX_EXPR"
+VARIABLE_EXPR = "VARIABLE_EXPR"
 
 # Statement types
 EXPR_STMT = "EXPR_STMT"
@@ -84,10 +87,19 @@ symbol_lookup = {
     "}": RIGHT_BRACE,
     "[": LEFT_SQUARE,
     "]": RIGHT_SQUARE,
+    "!": NOT,
+    "%": MODULO,
+    ">": GREATER,
+    "<": LESS,
 }
 
 double_token_lookup = {
     "==": EQUAL_EQUAL,
+    ">=": GREATER_EQUAL,
+    "<=": LESS_EQUAL,
+    "!=": NOT_EQUAL,
+    "&&": AND,
+    "||": OR,
 }
 
 whitespace_lookup = {
