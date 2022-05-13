@@ -3,10 +3,10 @@ import parser
 import util
 
 def main():
-    a = "(a + b) == c"
+    a = "(1)"
     tok = lexer.tokenize(a)
     expr = parser.parse_expression(tok)
-    util.inspect_types(expr)
+    util.inspect_expr(expr)
 
 if __name__ == "__main__":
     main()

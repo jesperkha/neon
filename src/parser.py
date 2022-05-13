@@ -1,9 +1,56 @@
 from tokens import *
 from util import *
 
+# Parses token list into list of statements
 def parse(tokens: list) -> list[Statement]:
     return []
 
+# Seeks and returns the index of the closing token of a given list.
+def seek(tokens: list[Token], start_t: int, end_t: int, start_idx: int = 0) -> int:
+    t = 0
+    if tokens[0].type != start_t:
+        return -1
+
+    for idx, tok in enumerate(tokens[start_idx:]):
+        if tok.type == start_t: t += 1
+        elif tok.type == end_t: t -= 1
+        if t == 0:
+            return idx
+
+    return -1
+
+# Token iterator skips over group expressions
+class TokenIter:
+    def __init__(self, tokens) -> None:
+        self.tokens = tokens
+        self.idx = -1
+    
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> tuple[int, Token]:
+        self.idx += 1
+        if self.idx >= len(self.tokens):
+            raise StopIteration
+        t = self.tokens[self.idx]
+        if t.type == LEFT_PAREN:
+            end_idx = seek(self.tokens, LEFT_PAREN, RIGHT_PAREN, self.idx)
+            if end_idx == -1:
+                raise StopIteration
+            self.idx = end_idx + self.idx
+            return self.__next__()
+
+        return self.idx, self.tokens[self.idx]
+
+# Returns true if the open and closing token types match
+def verify_brackets(tokens: list[Token], start_t: int, end_t: int) -> bool:
+    t = 0
+    for tok in tokens:
+        if tok.type == start_t: t += 1
+        elif tok.type == end_t: t -= 1
+    return t == 0
+
+# Recursively parses token list into an expression tree
 def parse_expression(tokens: list) -> Expression:
     if len(tokens) == 0:
         return Expression(EXPR_EMPTY, tokens, -1)
@@ -11,7 +58,10 @@ def parse_expression(tokens: list) -> Expression:
     first = tokens[0].type
     line  = tokens[0].line
 
-    # Todo: verify parens are correctly opened/closed
+    if not verify_brackets(tokens, LEFT_PAREN, RIGHT_PAREN):
+        err(f"unmatched parentheses, line {line}")
+    if not verify_brackets(tokens, LEFT_SQUARE, RIGHT_SQUARE):
+        err(f"unmatched square brackets, line {line}")
 
     # a single token list can only be a literal value
     if len(tokens) == 1:
@@ -35,8 +85,7 @@ def parse_expression(tokens: list) -> Expression:
     # binary expression in order of precedence
     is_op = lambda typ: typ >= AND and typ <= SLASH
     operator, op_idx = None, 0
-    for idx, t in enumerate(tokens):
-        # Todo: skip over groups to avoid splitting inside them
+    for idx, t in TokenIter(tokens):
         if not is_op(t.type):
             continue
         # if the tokens is lower precedence split earlier
