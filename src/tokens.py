@@ -1,10 +1,39 @@
 class Token:
     def __init__(self, type: int, lexeme: str, line: int) -> None:
-        self.lexeme = lexeme
-        self.line   = line
-        self.type   = type
+        self.lexeme  = lexeme
+        self.line    = line
+        self.type    = type
         self.isfloat = False
 
+class Type:
+    def __init__(self, type: str = "") -> None:
+        self.type  = type
+        self.group: str
+        self.set(type)
+
+    def set(self, type: str) -> None:
+        "set group from value type"
+        self.type = type
+        if type in (TYPE_CHAR, TYPE_STRING):
+            self.group = GRP_STRING
+        elif type in (TYPE_INT):
+            self.group = GRP_NUMBER
+        else:
+            self.group = GRP_NONE
+    
+    def setv(self, token: Token) -> str:
+        "set value type and group from token type, returns vtype"
+        t = token.type
+        if t == STRING:
+            self.set(TYPE_STRING)
+        elif t == NUMBER:
+            self.set(TYPE_FLOAT if token.isfloat else TYPE_INT)
+        elif t == IDENTIFIER:
+            self.set(TYPE_VAR)
+        else:
+            self.set(TYPE_NONE)
+        return self.type
+    
 class Expression:
     def __init__(self, type: str, tokens: list, line: int) -> None:
         self.type = type
@@ -12,8 +41,11 @@ class Expression:
         self.line = line
         self.left: Expression = None
         self.right: Expression = None
-        self.value: Expression = None
+        self.inner: Expression = None
         self.operator: Token = None
+        self.value = Type()
+        if self.type == EXPR_LITERAL:
+            self.value.setv(self.tokens[0])
 
 class Statement:
     def __init__(self, type: str, expr: Expression, line: int) -> None:
@@ -59,18 +91,31 @@ MODULO        = i()
 NOT           = i()
 
 # Expression types
-EMPTY_EXPR    = "EMPTY_EXPR"
-BINARY_EXPR   = "BINARY_EXPR"
-GROUP_EXPR    = "GROUP_EXPR"
-LITERAL_EXPR  = "LITERAL_EXPR"
-ARRAY_EXPR    = "ARRAY_EXPR"
-UNARY_EXPR    = "UNARY_EXPR"
-CALL_EXPR     = "CALL_EXPR"
-INDEX_EXPR    = "INDEX_EXPR"
-VARIABLE_EXPR = "VARIABLE_EXPR"
+EXPR_EMPTY    = "EMPTY"
+EXPR_BINARY   = "BINARY"
+EXPR_GROUP    = "GROUP"
+EXPR_LITERAL  = "LITERAL"
+EXPR_ARRAY    = "ARRAY"
+EXPR_UNARY    = "UNARY"
+EXPR_CALL     = "CALL"
+EXPR_INDEX    = "INDEX"
+EXPR_VARIABLE = "VARIABLE"
 
 # Statement types
-EXPR_STMT = "EXPR_STMT"
+STMT_EXPR = "EXPR"
+
+# Types
+TYPE_NONE   = "NONE"
+TYPE_STRING = "STRING"
+TYPE_CHAR   = "CHAR"
+TYPE_INT    = "INT"
+TYPE_FLOAT  = "FLOAT"
+TYPE_VAR    = "UNKNOWN"
+
+# Type groups
+GRP_NONE   = "NONE"
+GRP_STRING = "STRING"
+GRP_NUMBER = "NUMBER"
 
 keyword_lookup = {
 }

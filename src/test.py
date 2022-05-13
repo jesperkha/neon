@@ -8,12 +8,12 @@ def errorif(bin: bool, msg: str):
         exit(1)
 
 expr_cases = [
-    ["1", tokens.LITERAL_EXPR],
-    ["a", tokens.VARIABLE_EXPR],
-    ["(a)", tokens.GROUP_EXPR],
-    ["[]", tokens.ARRAY_EXPR],
-    ["a + b", tokens.BINARY_EXPR],
-    ["-a", tokens.UNARY_EXPR],
+    ["1", tokens.EXPR_LITERAL],
+    ["a", tokens.EXPR_VARIABLE],
+    ["(a)", tokens.EXPR_GROUP],
+    ["[]", tokens.EXPR_ARRAY],
+    ["a + b", tokens.EXPR_BINARY],
+    ["-a", tokens.EXPR_UNARY],
     # Todo: add call parsing
     # ["a()", tokens.CALL_EXPR],
     # Todo: add array indexing parsing
