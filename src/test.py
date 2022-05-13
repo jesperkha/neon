@@ -14,9 +14,7 @@ expr_cases = [
     ["[]", tokens.EXPR_ARRAY],
     ["a + b", tokens.EXPR_BINARY],
     ["-a", tokens.EXPR_UNARY],
-    # Todo: add call parsing
     ["a()", tokens.EXPR_CALL],
-    # Todo: add array indexing parsing
     # ["a[0]", tokens.EXPR_INDEX],
 ]
 

@@ -74,6 +74,8 @@ def parse_expression(tokens: list) -> Expression:
             return expr
 
         err(f"expected literal in expression, got '{tokens[0].lexeme}', line {line}")
+    
+    # Todo: checl for argument expression
 
     # unrary expression, first token is unary operator
     if first in (MINUS, NOT) and (len(tokens) == 2 or tokens[1].type == LEFT_PAREN):
@@ -120,6 +122,21 @@ def parse_expression(tokens: list) -> Expression:
         array = Expression(EXPR_ARRAY, tokens, line)
         array.inner = inner
         return array
+
+    # check for function call expression
+    if first == IDENTIFIER:
+        second = tokens[1].type
+        if second == LEFT_PAREN:
+            callee = tokens[0]
+            inner = parse_expression(tokens[2:len(tokens)-1])
+            call = Expression(EXPR_CALL, tokens, line)
+            call.inner = inner
+            call.callee = callee
+            return call
+
+        elif second == LEFT_SQUARE:
+            # Todo: implement array index expr
+            err("array index expr not implemented yet")
 
     # fallthrough means invalid expression
     err(f"invalid expression, line {line}")

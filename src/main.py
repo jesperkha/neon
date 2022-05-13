@@ -3,7 +3,8 @@ import parser
 import util
 
 def main():
-    a = "(1)"
+    # a = input("> ")
+    a = "f()"
     tok = lexer.tokenize(a)
     expr = parser.parse_expression(tok)
     util.inspect_expr(expr)

@@ -43,6 +43,7 @@ class Expression:
         self.right: Expression = None
         self.inner: Expression = None
         self.operator: Token = None
+        self.callee: Token = None
         self.value = Type()
         if self.type == EXPR_LITERAL:
             self.value.setv(self.tokens[0])

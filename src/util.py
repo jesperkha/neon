@@ -11,9 +11,13 @@ def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):
     for t in expr.tokens: s += t.lexeme
     tabs = "\t" * level
     print(f"{tabs}{prefix + ': ' if prefix != '' else ''}{expr.type} '{s}'")
-    if expr.operator:
-        tabs2 = "\t" * (level + 1)
-        print(f"{tabs2}operator: '{expr.operator.lexeme}'")
+
+    a = (expr.operator, expr.callee)
+    b = ("operator", "callee")
+    tabs2 = "\t" * (level + 1)
+    for idx, v in enumerate(a):
+        if v: print(f"{tabs2}{b[idx]}: '{v.lexeme}'")
+
     a = (expr.inner, expr.left, expr.right)
     b = ("inner", "left", "right")
     for idx, v in enumerate(a):
