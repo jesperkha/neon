@@ -107,7 +107,8 @@ EXPR_VARIABLE = "VARIABLE"
 EXPR_ARGS     = "ARGS"
 
 # Statement types
-STMT_EXPR = "EXPR"
+STMT_EXPR   = "EXPR"
+STMT_RETURN = "RETURN"
 
 # Types
 TYPE_NONE   = "NONE"
