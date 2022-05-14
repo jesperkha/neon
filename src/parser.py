@@ -141,6 +141,8 @@ def parse_expression(tokens: list) -> Expression:
 
     # check for function call expression
     if first == IDENTIFIER:
+        # Todo: parse first, the ()/[] should be checked at end of line
+        # then parse the left side recursively
         second = tokens[1].type
         if second == LEFT_PAREN:
             callee = tokens[0]
@@ -151,8 +153,15 @@ def parse_expression(tokens: list) -> Expression:
             return call
 
         elif second == LEFT_SQUARE:
-            # Todo: implement array index expr
-            err("array index expr not implemented yet")
+            array = tokens[0]
+            inner = parse_expression(tokens[2:len(tokens)-1])
+            if inner.type == EXPR_EMPTY:
+                err(f"missing expression as index, line {line}")
+
+            index = Expression(EXPR_INDEX, tokens, line)
+            index.inner = inner
+            index.callee = array
+            return index
 
     # fallthrough means invalid expression
     err(f"invalid expression, line {line}")
