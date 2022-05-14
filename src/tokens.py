@@ -44,6 +44,7 @@ class Expression:
         self.inner: Expression = None
         self.operator: Token = None
         self.callee: Token = None
+        self.exprs: list[Expression] = None
         self.value = Type()
         if self.type == EXPR_LITERAL:
             self.value.setv(self.tokens[0])
@@ -74,6 +75,7 @@ LEFT_BRACE    = i()
 RIGHT_BRACE   = i()
 LEFT_SQUARE   = i()
 RIGHT_SQUARE  = i()
+COMMA         = i()
 
 # Binary expression tokens in order of precedency
 AND           = i()
@@ -101,6 +103,7 @@ EXPR_UNARY    = "UNARY"
 EXPR_CALL     = "CALL"
 EXPR_INDEX    = "INDEX"
 EXPR_VARIABLE = "VARIABLE"
+EXPR_ARGS     = "ARGS"
 
 # Statement types
 STMT_EXPR = "EXPR"
@@ -137,6 +140,7 @@ symbol_lookup = {
     "%": MODULO,
     ">": GREATER,
     "<": LESS,
+    ",": COMMA,
 }
 
 double_token_lookup = {

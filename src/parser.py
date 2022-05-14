@@ -1,3 +1,4 @@
+from lib2to3.pgen2 import token
 from tokens import *
 from util import *
 
@@ -6,12 +7,12 @@ def parse(tokens: list) -> list[Statement]:
     return []
 
 # Seeks and returns the index of the closing token of a given list.
-def seek(tokens: list[Token], start_t: int, end_t: int, start_idx: int = 0) -> int:
+def seek(tokens: list[Token], start_t: int, end_t: int) -> int:
     t = 0
     if tokens[0].type != start_t:
         return -1
 
-    for idx, tok in enumerate(tokens[start_idx:]):
+    for idx, tok in enumerate(tokens):
         if tok.type == start_t: t += 1
         elif tok.type == end_t: t -= 1
         if t == 0:
@@ -27,19 +28,22 @@ class TokenIter:
     
     def __iter__(self):
         return self
+    
+    def check_bracket(self, start_t: int, end_t: int) -> tuple[int, Token]:
+        if self.tokens[self.idx].type == start_t:
+            end_idx = seek(self.tokens[self.idx:], start_t, end_t)
+            if end_idx == -1:
+                raise StopIteration
+            self.idx = end_idx + self.idx
+            return self.__next__()
+        return None
 
     def __next__(self) -> tuple[int, Token]:
         self.idx += 1
         if self.idx >= len(self.tokens):
             raise StopIteration
-        t = self.tokens[self.idx]
-        if t.type == LEFT_PAREN:
-            end_idx = seek(self.tokens, LEFT_PAREN, RIGHT_PAREN, self.idx)
-            if end_idx == -1:
-                raise StopIteration
-            self.idx = end_idx + self.idx
-            return self.__next__()
-
+        if n := self.check_bracket(LEFT_PAREN, RIGHT_PAREN): return n
+        if n := self.check_bracket(LEFT_SQUARE, RIGHT_SQUARE): return n
         return self.idx, self.tokens[self.idx]
 
 # Returns true if the open and closing token types match
@@ -75,7 +79,19 @@ def parse_expression(tokens: list) -> Expression:
 
         err(f"expected literal in expression, got '{tokens[0].lexeme}', line {line}")
     
-    # Todo: checl for argument expression
+    # check for argument expression
+    arg_split = []
+    last_idx = -1
+    for idx, t in TokenIter(tokens):
+        if t.type == COMMA:
+            arg_split.append(tokens[last_idx+1:idx])
+            last_idx = idx
+
+    if len(arg_split) != 0:
+        arg_split.append(tokens[last_idx+1:])
+        args = Expression(EXPR_ARGS, tokens, line)
+        args.exprs = [parse_expression(e) for e in arg_split]
+        return args
 
     # unrary expression, first token is unary operator
     if first in (MINUS, NOT) and (len(tokens) == 2 or tokens[1].type == LEFT_PAREN):

@@ -5,6 +5,12 @@ def err(msg: str) -> None:
     exit(1)
 
 
+def print_tokens(tokens: list[Token]):
+    for t in tokens:
+        print(t.lexeme, end="")
+    print()
+    
+
 def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):
     "Pints out formatted expression"
     s = ""
@@ -22,6 +28,10 @@ def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):
     b = ("inner", "left", "right")
     for idx, v in enumerate(a):
         if v: inspect_expr(v, b[idx], level+1)
+    
+    if expr.exprs:
+        for i, e in enumerate(expr.exprs):
+            inspect_expr(e, f"{i}", level+1)
 
 
 def inspect_types(expr: Expression):

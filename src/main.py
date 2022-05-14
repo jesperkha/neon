@@ -4,7 +4,7 @@ import util
 
 def main():
     # a = input("> ")
-    a = "f()"
+    a = "f() + a"
     tok = lexer.tokenize(a)
     expr = parser.parse_expression(tok)
     util.inspect_expr(expr)

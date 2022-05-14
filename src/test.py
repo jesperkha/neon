@@ -15,6 +15,7 @@ expr_cases = [
     ["a + b", tokens.EXPR_BINARY],
     ["-a", tokens.EXPR_UNARY],
     ["a()", tokens.EXPR_CALL],
+    ["a, b, c", tokens.EXPR_ARGS],
     # ["a[0]", tokens.EXPR_INDEX],
 ]
 
