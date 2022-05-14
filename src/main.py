@@ -1,10 +1,12 @@
 import lexer
-import parser
 import util
+import parser
+
+util.DEBUG_MODE = True
 
 def main():
     # a = input("> ")
-    a = "[a[b] + c][0]"
+    a = "-f()"
     tok = lexer.tokenize(a)
     expr = parser.parse_expression(tok)
     util.inspect_expr(expr)

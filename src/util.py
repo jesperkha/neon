@@ -1,15 +1,24 @@
 from tokens import *
 
+DEBUG_MODE = False
+
 def err(msg: str) -> None:
-    print(msg)
+    print(f"error: {msg}")
     exit(1)
 
 
-def print_tokens(tokens: list[Token]):
-    for t in tokens:
-        print(t.lexeme, end="")
+def debug(msg: str, tokens: list[Token] = None) -> None:
+    if not DEBUG_MODE:
+        return
+        
+    print(f"debug: {msg}", end="")
+    if tokens:
+        s = ""
+        for t in tokens:
+            s += t.lexeme
+        print(f", tokens: {s}", end="")
     print()
-    
+
 
 def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):
     "Pints out formatted expression"

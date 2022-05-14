@@ -69,12 +69,12 @@ def parse_expression(tokens: list) -> Expression:
 
     # a single token list can only be a literal value
     if len(tokens) == 1:
+        debug(f"single token", tokens)
         if first in (STRING, NUMBER):
             return Expression(EXPR_LITERAL, tokens, line)
         elif first == IDENTIFIER:
             expr = Expression(EXPR_VARIABLE, tokens, line)
-            # Todo: check variable lookup for variable type
-            expr.value.set(TYPE_VAR) # placeholder
+            expr.value.set(TYPE_VAR) # sets type from lookup when doing ast pass
             return expr
 
         err(f"expected literal in expression, got '{tokens[0].lexeme}', line {line}")
@@ -88,6 +88,7 @@ def parse_expression(tokens: list) -> Expression:
             last_idx = idx
 
     if len(arg_split) != 0:
+        debug("arg list", tokens)
         arg_split.append(tokens[last_idx+1:])
         args = Expression(EXPR_ARGS, tokens, line)
         args.exprs = [parse_expression(e) for e in arg_split]
@@ -95,6 +96,7 @@ def parse_expression(tokens: list) -> Expression:
 
     # unrary expression, first token is unary operator
     if first in (MINUS, NOT) and (len(tokens) == 2 or tokens[1].type == LEFT_PAREN):
+        debug("unary", tokens)
         unary = Expression(EXPR_UNARY, tokens, line)
         unary.right = parse_expression(tokens[1:])
         unary.operator = tokens[0]
@@ -112,6 +114,7 @@ def parse_expression(tokens: list) -> Expression:
             op_idx = idx
     
     if operator:
+        debug("binary", tokens)
         if op_idx == 0 or op_idx == len(tokens)-1:
             side = "left" if op_idx == 0 else "right"
             err(f"expected expression on {side} side of '{operator.lexeme}', line {line}")
@@ -124,6 +127,7 @@ def parse_expression(tokens: list) -> Expression:
 
     # group expression, cannot be empty (func calls are parsed elsewhere)
     if seek(tokens, LEFT_PAREN, RIGHT_PAREN) == len(tokens)-1:
+        debug("group", tokens)
         inner = parse_expression(tokens[1:len(tokens)-1])
         if inner.type == EXPR_EMPTY:
             err(f"expected expression in (), line {line}")
@@ -134,6 +138,7 @@ def parse_expression(tokens: list) -> Expression:
 
     # array literal, can be empty
     if seek(tokens, LEFT_SQUARE, RIGHT_SQUARE) == len(tokens)-1:
+        debug("array", tokens)
         inner = parse_expression(tokens[1:len(tokens)-1])
         array = Expression(EXPR_ARRAY, tokens, line)
         array.inner = inner
@@ -145,6 +150,7 @@ def parse_expression(tokens: list) -> Expression:
         # then parse the left side recursively
         second = tokens[1].type
         if second == LEFT_PAREN:
+            debug("call", tokens)
             callee = tokens[0]
             inner = parse_expression(tokens[2:len(tokens)-1])
             call = Expression(EXPR_CALL, tokens, line)
@@ -153,6 +159,7 @@ def parse_expression(tokens: list) -> Expression:
             return call
 
         elif second == LEFT_SQUARE:
+            debug("index", tokens)
             array = tokens[0]
             inner = parse_expression(tokens[2:len(tokens)-1])
             if inner.type == EXPR_EMPTY:
@@ -164,4 +171,5 @@ def parse_expression(tokens: list) -> Expression:
             return index
 
     # fallthrough means invalid expression
+    debug("fallthrough", tokens)
     err(f"invalid expression, line {line}")
