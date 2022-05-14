@@ -44,6 +44,7 @@ class Expression:
         self.inner: Expression = None
         self.operator: Token = None
         self.callee: Token = None
+        self.array: Expression = None
         self.exprs: list[Expression] = None
         self.value = Type()
         if self.type == EXPR_LITERAL:

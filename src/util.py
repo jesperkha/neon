@@ -3,7 +3,7 @@ from tokens import *
 DEBUG_MODE = False
 
 def err(msg: str) -> None:
-    print(f"error: {msg}")
+    print(f"\033[91merror\033[0m: {msg}")
     exit(1)
 
 
@@ -11,7 +11,7 @@ def debug(msg: str, tokens: list[Token] = None) -> None:
     if not DEBUG_MODE:
         return
         
-    print(f"debug: {msg}", end="")
+    print(f"\033[94mdebug:\033[0m {msg}", end="")
     if tokens:
         s = ""
         for t in tokens:
@@ -33,8 +33,8 @@ def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):
     for idx, v in enumerate(a):
         if v: print(f"{tabs2}{b[idx]}: '{v.lexeme}'")
 
-    a = (expr.inner, expr.left, expr.right)
-    b = ("inner", "left", "right")
+    a = (expr.inner, expr.left, expr.right, expr.array)
+    b = ("inner", "left", "right", "array")
     for idx, v in enumerate(a):
         if v: inspect_expr(v, b[idx], level+1)
     

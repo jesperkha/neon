@@ -20,6 +20,22 @@ def seek(tokens: list[Token], start_t: int, end_t: int) -> int:
 
     return -1
 
+# Same as seek() but starts from end of list. Handles swap of start_t and end_t
+def seek_back(tokens: list[Token], start_t: int, end_t: int) -> int:
+    t = 0
+    last_idx = len(tokens) - 1
+    if tokens[last_idx].type != end_t:
+        return -1
+    
+    for idx in range(last_idx, 0, -1):
+        tok = tokens[idx]
+        if tok.type == start_t: t += 1
+        elif tok.type == end_t: t -= 1
+        if t == 0:
+            return idx
+    
+    return -1
+
 # Token iterator skips over group expressions
 class TokenIter:
     def __init__(self, tokens) -> None:
@@ -78,8 +94,9 @@ def parse_expression(tokens: list) -> Expression:
             return expr
 
         err(f"expected literal in expression, got '{tokens[0].lexeme}', line {line}")
-    
-    # check for argument expression
+
+    # argument expression (comma separated values). check if token list contains any
+    # commas since any expression with commas on top level must be an argument expression
     arg_split = []
     last_idx = -1
     for idx, t in TokenIter(tokens):
@@ -94,26 +111,36 @@ def parse_expression(tokens: list) -> Expression:
         args.exprs = [parse_expression(e) for e in arg_split]
         return args
 
-    # unrary expression, first token is unary operator
-    if first in (MINUS, NOT) and (len(tokens) == 2 or tokens[1].type == LEFT_PAREN):
-        debug("unary", tokens)
-        unary = Expression(EXPR_UNARY, tokens, line)
-        unary.right = parse_expression(tokens[1:])
-        unary.operator = tokens[0]
-        return unary
-
-    # binary expression in order of precedence
-    is_op = lambda typ: typ >= AND and typ <= SLASH
-    operator, op_idx = None, 0
+    # expression operators in order of precedence
+    is_op = lambda typ: typ >= AND and typ <= NOT
+    operator, op_idx, num_ops = None, 0, 0
     for idx, t in TokenIter(tokens):
         if not is_op(t.type):
             continue
-        # if the tokens is lower precedence split earlier
-        if not operator or (operator.type >= t.type and op_idx != idx - 1):
+
+        num_ops += 1
+        # 1. the operator is not yet set so set it now
+        # 2. the found operator is lower or equal precedence and is not the token after
+        # 3. even if the first op is the lowest it cannot be a pos 0 since that would
+        #    be a unary and since unary only has one operator this will never be
+        #    triggered for such an expression
+        if not operator or (operator.type >= t.type and op_idx != idx - 1) or op_idx == 0:
             operator = t
             op_idx = idx
     
     if operator:
+        # unary expression. first token must be the operator and only one operator
+        # can be present. it must also be a valid unary operator. error is handled
+        # when parsing binary
+        if op_idx == 0 and num_ops == 1 and first in (MINUS, NOT):
+            debug("unary", tokens)
+            unary = Expression(EXPR_UNARY, tokens, line)
+            unary.right = parse_expression(tokens[1:])
+            unary.operator = tokens[0]
+            return unary
+
+        # if its not a unary its binary. first check if the first or last token is
+        # an operator since that would be an invalid expression
         debug("binary", tokens)
         if op_idx == 0 or op_idx == len(tokens)-1:
             side = "left" if op_idx == 0 else "right"
@@ -125,7 +152,8 @@ def parse_expression(tokens: list) -> Expression:
         expr.operator = operator
         return expr
 
-    # group expression, cannot be empty (func calls are parsed elsewhere)
+    # group expression. a group cannot be empty. if the remaining tokens do not
+    # form a complete group thers either a syntax error or not a group expression
     if seek(tokens, LEFT_PAREN, RIGHT_PAREN) == len(tokens)-1:
         debug("group", tokens)
         inner = parse_expression(tokens[1:len(tokens)-1])
@@ -144,31 +172,29 @@ def parse_expression(tokens: list) -> Expression:
         array.inner = inner
         return array
 
-    # check for function call expression
-    if first == IDENTIFIER:
-        # Todo: parse first, the ()/[] should be checked at end of line
-        # then parse the left side recursively
-        second = tokens[1].type
-        if second == LEFT_PAREN:
-            debug("call", tokens)
-            callee = tokens[0]
-            inner = parse_expression(tokens[2:len(tokens)-1])
-            call = Expression(EXPR_CALL, tokens, line)
-            call.inner = inner
-            call.callee = callee
-            return call
+    # function call expression, ends with '(args)'
+    last = tokens[len(tokens)-1].type
+    if last == RIGHT_PAREN:
+        debug("call", tokens)
+        callee = tokens[0]
+        inner = parse_expression(tokens[2:len(tokens)-1])
+        call = Expression(EXPR_CALL, tokens, line)
+        call.inner = inner
+        call.callee = callee
+        return call
 
-        elif second == LEFT_SQUARE:
-            debug("index", tokens)
-            array = tokens[0]
-            inner = parse_expression(tokens[2:len(tokens)-1])
-            if inner.type == EXPR_EMPTY:
-                err(f"missing expression as index, line {line}")
+    # array index expression, ends with '[index]'
+    elif last == RIGHT_SQUARE:
+        debug("index", tokens)
+        begin_idx = seek_back(tokens, LEFT_SQUARE, RIGHT_SQUARE)
+        inner = parse_expression(tokens[begin_idx+1:len(tokens)-1])
+        if inner.type == EXPR_EMPTY:
+            err(f"missing expression as index, line {line}")
 
-            index = Expression(EXPR_INDEX, tokens, line)
-            index.inner = inner
-            index.callee = array
-            return index
+        index = Expression(EXPR_INDEX, tokens, line)
+        index.inner = inner
+        index.array = parse_expression(tokens[:begin_idx])
+        return index
 
     # fallthrough means invalid expression
     debug("fallthrough", tokens)
