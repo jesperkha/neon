@@ -14,3 +14,52 @@ two_chars: u16 = ...
 a := num[char]    // gets the 8 first bits (length of char), a is now of type char
 b := num[char ->] // gets the 8 last bits
 ```
+
+<br>
+
+## `using` statement
+
+```go
+// Lets say you have a long function that does a lot of
+// calculations with a lot of variables:
+func foo() {
+    ...
+
+    a := 1
+    b := "hello"
+    c := int[1, 2, 3]
+
+    // Instead of extracting some lines of code into another function
+    // which will only be used here, you can instead create a new scope
+    // that only has access to the variables you want to include:
+    using: a, b {
+        print a // 1
+        print b // hello
+        print c // error: c is not defined
+    }
+
+    // You can also output a value
+    // Todo: specify return type
+    d := using: a {
+        return a + 1
+    }
+}
+```
+
+<br>
+
+## Haskells `where` syntax
+
+```go
+// Abstract an expression into symbolic representations with 'where'
+let sum := a + b where {
+    a := 1
+    b := 2
+
+    // You can also define helper values etc
+    c := 3
+    b = c
+}
+
+print sum // 4
+```
