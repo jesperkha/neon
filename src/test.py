@@ -25,7 +25,7 @@ expr_cases = [
 
 stmt_cases = [
     ["a + b", tokens.STMT_EXPR],
-    # ["return a", tokens.STMT_RETURN],
+    ["return a", tokens.STMT_RETURN],
 ]
 
 def test_cases(prefix: str, cases: list):

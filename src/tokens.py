@@ -77,6 +77,7 @@ RIGHT_BRACE   = i()
 LEFT_SQUARE   = i()
 RIGHT_SQUARE  = i()
 COMMA         = i()
+RETURN        = i()
 
 # Binary expression tokens in order of precedency
 AND           = i()
@@ -124,6 +125,7 @@ GRP_STRING = "STRING"
 GRP_NUMBER = "NUMBER"
 
 keyword_lookup = {
+    "return": RETURN,
 }
 
 symbol_lookup = {

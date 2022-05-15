@@ -1,27 +1,6 @@
 from tokens import *
 from util import *
 
-# Parses token list into list of statements
-def parse(tokens: list) -> list[Statement]:
-    statements, idx = [], 0
-    while idx < len(tokens):
-        stmt, offset = parse_statement(tokens[idx:])
-        statements.append(stmt)
-        idx += offset
-
-    return statements
-
-# Parses the statement and returns said statement along with the new
-# index offset which is added to idx in parse()
-def parse_statement(tokens: list[Token]) -> tuple[Statement, int]:
-    first = tokens[0].type
-    line  = tokens[0].line
-
-    # fallthrough means expression statement
-    end_idx = seek_newline(tokens, 0)
-    expr = parse_expression(tokens[:end_idx])
-    return Statement(STMT_EXPR, expr, line), end_idx
-
 # Seeks newline token starting at cur_idx, returns NEWLINE index, -1 on fail
 def seek_newline(tokens: list[Token], cur_idx: int) -> int:
     for i in range(cur_idx, len(tokens)):
@@ -92,6 +71,41 @@ def verify_brackets(tokens: list[Token], start_t: int, end_t: int) -> bool:
         if tok.type == start_t: t += 1
         elif tok.type == end_t: t -= 1
     return t == 0
+
+# Parses token list into list of statements
+def parse(tokens: list) -> list[Statement]:
+    statements, idx = [], 0
+    while idx < len(tokens):
+        stmt, offset = parse_statement(tokens[idx:])
+        statements.append(stmt)
+        idx += offset
+
+    return statements
+
+# Parses the statement and returns said statement along with the new
+# index offset which is added to idx in parse()
+def parse_statement(tokens: list[Token]) -> tuple[Statement, int]:
+    first = tokens[0].type
+    line  = tokens[0].line
+
+    if first == RETURN:
+        # given RETURN
+        # expect expression
+        err("return not implemented")
+    # elif first == FUNC:
+    #   given 'func'
+    #   expect identifier
+    #   expect GROUP[ARGS]
+    #   expect :
+    #   expect type
+    #   expect block
+
+    # fallthrough means expression statement
+    end_idx = seek_newline(tokens, 0)
+    expr = parse_expression(tokens[:end_idx])
+    return Statement(STMT_EXPR, expr, line), end_idx
+
+
 
 # Recursively parses token list into an expression tree
 def parse_expression(tokens: list) -> Expression:
