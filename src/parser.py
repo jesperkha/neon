@@ -1,13 +1,6 @@
 from tokens import *
 from util import *
 
-# Seeks newline token starting at cur_idx, returns NEWLINE index, -1 on fail
-def seek_newline(tokens: list[Token], cur_idx: int) -> int:
-    for i in range(cur_idx, len(tokens)):
-        if tokens[i].type == NEWLINE:
-            return i
-    return len(tokens)
-
 # Seeks and returns the index of the closing token of a given list, -1 on fail
 def seek(tokens: list[Token], start_t: int, end_t: int) -> int:
     t = 0
@@ -40,7 +33,7 @@ def seek_back(tokens: list[Token], start_t: int, end_t: int) -> int:
 
 # Token iterator skips over group expressions
 class TokenIter:
-    def __init__(self, tokens) -> None:
+    def __init__(self, tokens):
         self.tokens = tokens
         self.idx = -1
     
@@ -74,38 +67,73 @@ def verify_brackets(tokens: list[Token], start_t: int, end_t: int) -> bool:
 
 # Parses token list into list of statements
 def parse(tokens: list) -> list[Statement]:
-    statements, idx = [], 0
-    while idx < len(tokens):
-        stmt, offset = parse_statement(tokens[idx:])
-        statements.append(stmt)
-        idx += offset
+    return stmt_parser(tokens).parse()
 
-    return statements
+# Statement parser object to keep state when doing recursive parsing
+# Also makes it easier to do expect_x() parsing
+class stmt_parser:
+    def __init__(self, tokens: list[Token]):
+        self.tokens = tokens
+        self.idx = 0
+        self.line = 0
+        self.statements = []
+    
+    def parse(self) -> list[Statement]:
+        while self.idx < len(self.tokens):
+            stmt = self.parse_stmt()
+            self.statements.append(stmt)
+        return self.statements
+    
+    def parse_stmt(self) -> Statement:
+        tok = self.advance()
+        typ = tok.type
 
-# Parses the statement and returns said statement along with the new
-# index offset which is added to idx in parse()
-def parse_statement(tokens: list[Token]) -> tuple[Statement, int]:
-    first = tokens[0].type
-    line  = tokens[0].line
+        if typ == RETURN:
+            expr = self.expect_expr()
+            return Statement(STMT_RETURN, expr=expr)
 
-    if first == RETURN:
-        # given RETURN
-        # expect expression
-        err("return not implemented")
-    # elif first == FUNC:
-    #   given 'func'
-    #   expect identifier
-    #   expect GROUP[ARGS]
-    #   expect :
-    #   expect type
-    #   expect block
-
-    # fallthrough means expression statement
-    end_idx = seek_newline(tokens, 0)
-    expr = parse_expression(tokens[:end_idx])
-    return Statement(STMT_EXPR, expr, line), end_idx
-
-
+        # fallthrough means expression statement
+        self.back() # go back one
+        expr = self.expect_expr()
+        return Statement(STMT_EXPR, expr=expr)
+    
+    # Peeks next token, raises error on EOF
+    def peek(self) -> Token:
+        if self.idx + 1 >= len(self.tokens):
+            err(f"unexpected end of input, line {self.line}")
+        return self.tokens[self.idx+1]
+    
+    # Consumes and returns the current Token. Raises error on EOF
+    def advance(self) -> Token:
+        cur = self.tokens[self.idx]
+        self.line = cur.line # better error handling
+        self.idx += 1
+        if self.idx > len(self.tokens):
+            err(f"unexpected end of input, line {self.line}")
+        return cur
+    
+    # Goes back one token and returns it. NO CHECK FOR OUT OF RANGE
+    def back(self) -> Token:
+        self.idx -= 1
+        return self.tokens[self.idx]
+    
+    # Looks at current token to check for the keyword (token type). If the
+    # keyword is not found an error is raised. Consumes token
+    def expect_keyword(self, keyword: int):
+        kw = self.advance()
+        if kw.type != keyword:
+            kw_name = [k for k, v in keyword_lookup.items() if v == keyword][0]
+            err(f"expected keyword '{kw_name}', found '{kw.lexeme}', line {self.line}")
+    
+    # Seeks a NEWLINE token and parses the expression in interval.
+    # Returns expression. Raises error on EOF. Consumes NEWLINE token
+    def expect_expr(self) -> Expression:
+        start_i = self.idx
+        while t := self.advance():
+            if t.type in (NEWLINE, EOF):
+                break
+        token_range = self.tokens[start_i:self.idx-1]
+        return parse_expression(token_range)
 
 # Recursively parses token list into an expression tree
 def parse_expression(tokens: list) -> Expression:
@@ -126,9 +154,7 @@ def parse_expression(tokens: list) -> Expression:
         if first in (STRING, NUMBER):
             return Expression(EXPR_LITERAL, tokens, line)
         elif first == IDENTIFIER:
-            expr = Expression(EXPR_VARIABLE, tokens, line)
-            expr.value.set(TYPE_VAR) # sets type from lookup when doing ast pass
-            return expr
+            return Expression(EXPR_VARIABLE, tokens, line)
 
         err(f"expected literal in expression, got '{tokens[0].lexeme}', line {line}")
 

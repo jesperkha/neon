@@ -39,7 +39,7 @@ func foo() {
     }
 
     // You can also output a value, however this means you have to specify
-    // the type of the variable. You cannot use the using statement for 
+    // the type of the variable. You cannot use the using statement for
     // reassignment or return
     d: int = using a {
         return a + 1

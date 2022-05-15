@@ -43,19 +43,5 @@ def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):
             inspect_expr(e, f"{i}", level+1)
 
 
-def inspect_types(expr: Expression):
-    "Prints expression with values substituted with their types"
-    s = ""
-    typ = Type()
-    for t in expr.tokens:
-        vtype = typ.setv(t)
-        if vtype != TYPE_NONE:
-            s += vtype
-        else:
-            s += t.lexeme
-    
-    print(s)
-
-
 def inspect_stmt(stmt: Statement):
     pass
