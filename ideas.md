@@ -32,15 +32,16 @@ func foo() {
     // Instead of extracting some lines of code into another function
     // which will only be used here, you can instead create a new scope
     // that only has access to the variables you want to include:
-    using: a, b {
+    using a, b {
         print a // 1
         print b // hello
         print c // error: c is not defined
     }
 
-    // You can also output a value
-    // Todo: specify return type
-    d := using: a {
+    // You can also output a value, however this means you have to specify
+    // the type of the variable. You cannot use the using statement for 
+    // reassignment or return
+    d: int = using a {
         return a + 1
     }
 }
@@ -52,7 +53,7 @@ func foo() {
 
 ```go
 // Abstract an expression into symbolic representations with 'where'
-let sum := a + b where {
+sum := a + b where {
     a := 1
     b := 2
 
@@ -62,4 +63,31 @@ let sum := a + b where {
 }
 
 print sum // 4
+```
+
+<br>
+
+## Keeping function state
+
+```go
+// Lets say you have a function that needs to keep some state, for
+// this example we will just implement an iterator function.
+
+// In other languages you would need to either have some global
+// variables to access or even use a class. However, this is where
+// the 'keep' statement comes in play:
+func next_person(): string {
+    // Here you can define local variables that will keep their
+    // values between function calls
+    keep people := string["John", "Amy", "Carl"]
+    keep idx := 0
+
+    person := people[idx]
+    idx++
+    return person
+}
+
+print next_person() // John
+print next_person() // Amy
+print next_person() // Carl
 ```
