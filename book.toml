@@ -2,5 +2,5 @@
 authors = ["jesperkha"]
 language = "en"
 multilingual = false
-src = "src"
+src = "docs"
 title = "Neon Documentation"
