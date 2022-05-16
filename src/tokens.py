@@ -4,25 +4,35 @@ class Token:
         self.line    = line
         self.type    = type
         self.isfloat = False
-    
+
+class Type:
+    def __init__(self) -> None:
+        pass
+
 class Expression:
     def __init__(self, type: str, tokens: list, line: int):
         self.type = type
         self.line = line
         self.tokens = tokens
-        self.exprs:    list[Expression]
-        self.left:     Expression
-        self.right:    Expression
-        self.inner:    Expression
-        self.array:    Expression
-        self.callee:   Token
-        self.operator: Token
+        self.exprs:    list[Expression] = None
+        self.left:     Expression = None
+        self.right:    Expression = None
+        self.inner:    Expression = None
+        self.array:    Expression = None
+        self.callee:   Token = None
+        self.operator: Token = None
 
 class Statement:
-    def __init__(self, type: str, line: int = 0, expr: Expression = None):
+    def __init__(self,
+        type: str,
+        line: int = 0,
+        expr: Expression = None,
+        name: Token = None,
+    ):
         self.type = type
         self.line = line
         self.expr = expr
+        self.name = name
 
 _i = 0
 def i():
@@ -36,7 +46,6 @@ IDENTIFIER    = i()
 NUMBER        = i()
 SPACE         = i()
 NEWLINE       = i()
-EOF           = i()
 TAB           = i()
 STRING        = i()
 LEFT_PAREN    = i()
@@ -47,6 +56,8 @@ LEFT_SQUARE   = i()
 RIGHT_SQUARE  = i()
 COMMA         = i()
 RETURN        = i()
+FUNC          = i()
+COLON         = i()
 
 # Binary expression tokens in order of precedency
 AND           = i()
@@ -80,22 +91,11 @@ EXPR_ARGS     = "ARGS"
 STMT_NONE   = "UNCOMPLETE_STMT"
 STMT_EXPR   = "EXPR"
 STMT_RETURN = "RETURN"
-
-# Types
-TYPE_NONE   = "NONE"
-TYPE_STRING = "STRING"
-TYPE_CHAR   = "CHAR"
-TYPE_INT    = "INT"
-TYPE_FLOAT  = "FLOAT"
-TYPE_VAR    = "UNKNOWN"
-
-# Type groups
-GRP_NONE   = "NONE"
-GRP_STRING = "STRING"
-GRP_NUMBER = "NUMBER"
+STMT_FUNC   = "FUNCTION"
 
 keyword_lookup = {
     "return": RETURN,
+    "func":   FUNC,
 }
 
 symbol_lookup = {
@@ -115,6 +115,7 @@ symbol_lookup = {
     ">": GREATER,
     "<": LESS,
     ",": COMMA,
+    ":": COLON,
 }
 
 double_token_lookup = {

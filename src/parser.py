@@ -2,16 +2,19 @@ from tokens import *
 from util import *
 
 # Seeks and returns the index of the closing token of a given list, -1 on fail
-def seek(tokens: list[Token], start_t: int, end_t: int) -> int:
+def seek(tokens: list[Token], start_t: int, end_t: int, start_idx: int = 0) -> int:
     t = 0
-    if tokens[0].type != start_t:
+    if tokens[start_idx].type != start_t:
         return -1
 
-    for idx, tok in enumerate(tokens):
+    idx = start_idx
+    while idx < len(tokens):
+        tok = tokens[idx]
         if tok.type == start_t: t += 1
         elif tok.type == end_t: t -= 1
         if t == 0:
             return idx
+        idx += 1
 
     return -1
 
@@ -69,6 +72,10 @@ def verify_brackets(tokens: list[Token], start_t: int, end_t: int) -> bool:
 def parse(tokens: list) -> list[Statement]:
     return stmt_parser(tokens).parse()
 
+# Todo: implement type parser
+def parse_type(tokens: list) -> Type:
+    pass
+
 # Statement parser object to keep state when doing recursive parsing
 # Also makes it easier to do expect_x() parsing
 class stmt_parser:
@@ -91,6 +98,12 @@ class stmt_parser:
         if typ == RETURN:
             expr = self.expect_expr()
             return Statement(STMT_RETURN, expr=expr)
+        elif typ == FUNC:
+            name  = self.expect_identifier()
+            args  = self.expect_args()
+            type  = self.expect_type()
+            block = self.expect_block()
+            return Statement(STMT_FUNC, name=name)
 
         # fallthrough means expression statement
         self.back() # go back one
@@ -104,12 +117,14 @@ class stmt_parser:
         return self.tokens[self.idx+1]
     
     # Consumes and returns the current Token. Raises error on EOF
-    def advance(self) -> Token:
+    def advance(self, e: bool = False) -> Token:
+        if self.idx >= len(self.tokens):
+            if e: err(f"unexpected end of input, line {self.line}")
+            return None
+
         cur = self.tokens[self.idx]
         self.line = cur.line # better error handling
         self.idx += 1
-        if self.idx > len(self.tokens):
-            err(f"unexpected end of input, line {self.line}")
         return cur
     
     # Goes back one token and returns it. NO CHECK FOR OUT OF RANGE
@@ -120,7 +135,7 @@ class stmt_parser:
     # Looks at current token to check for the keyword (token type). If the
     # keyword is not found an error is raised. Consumes token
     def expect_keyword(self, keyword: int):
-        kw = self.advance()
+        kw = self.advance(True)
         if kw.type != keyword:
             kw_name = [k for k, v in keyword_lookup.items() if v == keyword][0]
             err(f"expected keyword '{kw_name}', found '{kw.lexeme}', line {self.line}")
@@ -128,12 +143,40 @@ class stmt_parser:
     # Seeks a NEWLINE token and parses the expression in interval.
     # Returns expression. Raises error on EOF. Consumes NEWLINE token
     def expect_expr(self) -> Expression:
-        start_i = self.idx
+        start_i, n = self.idx, 0
         while t := self.advance():
-            if t.type in (NEWLINE, EOF):
+            if t.type == NEWLINE:
+                n = 1
                 break
-        token_range = self.tokens[start_i:self.idx-1]
+        token_range = self.tokens[start_i:self.idx-n]
         return parse_expression(token_range)
+    
+    # Checks if next token is identifier. Raises error. Consumes token
+    def expect_identifier(self) -> Token:
+        t = self.advance(True)
+        if t.type != IDENTIFIER:
+            err(f"expected identifier, got '{t.lexeme}', line {self.line}")
+        return t
+    
+    # Checks to see if the next tokens indicate an argument list. Raises
+    # error on fail. Consumes tokens. RETURNED EXPR CAN BE NON-ARGS TOO
+    def expect_args(self) -> Expression:
+        t = self.advance(True)
+        if t.type != LEFT_PAREN:
+            err(f"expected left paren before arg list, found '{t.lexeme}', line {self.line}")
+        self.back() # go back after checking for better error
+        end_idx = seek(self.tokens, LEFT_PAREN, RIGHT_PAREN, self.idx)
+        if end_idx == -1:
+            err(f"expected right paren after arg list, line {self.line}")
+        interval = self.tokens[self.idx+1:end_idx]
+        self.idx = end_idx
+        return parse_expression(interval)
+
+    def expect_type(self) -> Type:
+        err("expect_type() not implemented yet")
+    
+    def expect_block(self) -> Statement:
+        err("expect_block() not implemented yet")
 
 # Recursively parses token list into an expression tree
 def parse_expression(tokens: list) -> Expression:
@@ -228,35 +271,41 @@ def parse_expression(tokens: list) -> Expression:
         return group
 
     # array literal, can be empty
-    if seek(tokens, LEFT_SQUARE, RIGHT_SQUARE) == len(tokens)-1:
-        debug("array", tokens)
-        inner = parse_expression(tokens[1:len(tokens)-1])
-        array = Expression(EXPR_ARRAY, tokens, line)
-        array.inner = inner
-        return array
+    # Todo: re-implement but with check for type prefix
+    # if seek(tokens, LEFT_SQUARE, RIGHT_SQUARE) == len(tokens)-1:
+    #     debug("array", tokens)
+    #     inner = parse_expression(tokens[1:len(tokens)-1])
+    #     array = Expression(EXPR_ARRAY, tokens, line)
+    #     array.inner = inner
+    #     return array
 
     # function call expression, ends with '(args)'
     last = tokens[len(tokens)-1].type
     if last == RIGHT_PAREN:
         debug("call", tokens)
-        callee = tokens[0]
-        inner = parse_expression(tokens[2:len(tokens)-1])
+        begin_idx = seek_back(tokens, LEFT_PAREN, RIGHT_PAREN)
+        if begin_idx == 0:
+            err(f"expected function expression before args, line {line}")
+
         call = Expression(EXPR_CALL, tokens, line)
-        call.inner = inner
-        call.callee = callee
+        call.inner = parse_expression(tokens[begin_idx+1:len(tokens)-1])
+        call.callee = parse_expression(tokens[:begin_idx])
         return call
 
     # array index expression, ends with '[index]'
     elif last == RIGHT_SQUARE:
         debug("index", tokens)
         begin_idx = seek_back(tokens, LEFT_SQUARE, RIGHT_SQUARE)
+        if begin_idx == 0:
+            err(f"expected expression before index, line {line}")
+
         inner = parse_expression(tokens[begin_idx+1:len(tokens)-1])
         if inner.type == EXPR_EMPTY:
             err(f"missing expression as index, line {line}")
 
         index = Expression(EXPR_INDEX, tokens, line)
-        index.inner = inner
         index.array = parse_expression(tokens[:begin_idx])
+        index.inner = inner
         return index
 
     # fallthrough means invalid expression

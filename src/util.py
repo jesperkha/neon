@@ -2,15 +2,14 @@ from tokens import *
 
 DEBUG_MODE = False
 
-def err(msg: str) -> None:
+def err(msg: str):
     print(f"\033[91merror\033[0m: {msg}")
     exit(1)
 
 
-def debug(msg: str, tokens: list[Token] = None) -> None:
+def debug(msg: str, tokens: list[Token] = None):
     if not DEBUG_MODE:
         return
-        
     print(f"\033[94mdebug:\033[0m {msg}", end="")
     if tokens:
         s = ""
@@ -20,11 +19,20 @@ def debug(msg: str, tokens: list[Token] = None) -> None:
     print()
 
 
+def interupt(msg: str):
+    print(f"\033[92minterupt:\033[0m {msg}")
+    exit()
+
+
 def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):
     "Pints out formatted expression"
+    tabs = "\t" * level
+    if expr.type == EXPR_EMPTY:
+        print(f"{tabs}EMPTY_EXPR")
+        return
+        
     s = ""
     for t in expr.tokens: s += t.lexeme
-    tabs = "\t" * level
     print(f"{tabs}{prefix + ': ' if prefix != '' else ''}{expr.type} '{s}'")
 
     a = (expr.operator, expr.callee)

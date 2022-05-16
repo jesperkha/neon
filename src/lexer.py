@@ -101,5 +101,4 @@ def tokenize(source: str) -> list[Token]:
         # fallthrough is error
         err(f"unexpected token '{char}', line {line}")
 
-    token_list.append(Token(EOF, "EOF", line))
     return token_list
