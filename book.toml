@@ -1,6 +1,0 @@
-[book]
-authors = ["jesperkha"]
-language = "en"
-multilingual = false
-src = "docs"
-title = "Neon Documentation"

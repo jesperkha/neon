@@ -1,6 +1,8 @@
-# Statements
+# Neon Language Documentation
 
-## Print
+## Statements
+
+### Print
 
 The built-in `print` statement lets you print out formatted values. Structs and arrays will be printed in a readable format.
 
@@ -11,7 +13,7 @@ print names // ["John", "Amy", "Carl"]
 
 <br>
 
-## Function
+### Function
 
 You can declare a function using the `func` keyword. Return type is specified at the end with a colon `:`, can also return nothing. Use `return` to return a value.
 
@@ -27,7 +29,7 @@ func say_hello() {
 
 <br>
 
-## Struct
+### Struct
 
 Neons structs are similar to most languages inmplementation. When you define a struct it becomes a local type for that file.
 
@@ -43,4 +45,4 @@ print john.name // John
 
 <br>
 
-##
+###
