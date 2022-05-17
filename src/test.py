@@ -27,6 +27,9 @@ stmt_cases = [
     ["a + b", tokens.STMT_EXPR],
     ["return a", tokens.STMT_RETURN],
     ["func main(): int {}", tokens.STMT_FUNC],
+    ["a := 0", tokens.STMT_DECLARE],
+    ["a: int = 0", tokens.STMT_DECLARE],
+    ["a = 0", tokens.STMT_ASSIGN],
 ]
 
 def test_cases(prefix: str, cases: list):

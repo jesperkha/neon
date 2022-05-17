@@ -34,6 +34,23 @@ def seek_back(tokens: list[Token], start_t: int, end_t: int) -> int:
     
     return -1
 
+# Returns index of end_t, -1 on fail
+def seek_token(tokens: list[Token], end_t: int, start_idx: int = 0) -> int:
+    i = start_idx
+    while i < len(tokens):
+        t = tokens[i]
+        if t.type == end_t:
+            return i
+        i += 1
+    return -1
+
+# Splits token list by token type. Returns None on fail
+def split(tokens: list[Token], typ: int) -> tuple[list, list]:
+    for i, t in enumerate(tokens):
+        if t.type == typ:
+            return tokens[:i], tokens[i+1:]
+    return None
+
 # Token iterator skips over group expressions
 class TokenIter:
     def __init__(self, tokens):
@@ -91,14 +108,17 @@ class stmt_parser:
         return self.statements
     
     def parse_stmt(self) -> Statement:
-        tok = self.advance()
+        tok = self.current()
         typ = tok.type
 
         if typ == RETURN:
+            self.expect_keyword(RETURN)
             stmt = Statement(STMT_RETURN, self.line)
             stmt.expr = self.expect_expr()
             return stmt
+
         elif typ == FUNC:
+            self.expect_keyword(FUNC)
             stmt = Statement(STMT_FUNC, self.line)
             stmt.name  = self.expect_identifier()
             stmt.expr  = self.expect_args()
@@ -106,8 +126,35 @@ class stmt_parser:
             stmt.block = self.expect_block()
             return stmt
 
+        elif typ == IDENTIFIER:
+            stmt = Statement(STMT_DECLARE, self.line)
+            end_idx = seek_token(self.tokens, NEWLINE, self.idx)
+            line = self.tokens[self.idx:end_idx]
+            if s := split(line, EQUAL):
+                # declaration or asignment (depending on type present)
+                left = s[0]
+                if left[0].type != IDENTIFIER:
+                    err(f"expected identifer on left side of '=', line {self.line}")
+                self.advance() # skip identifer to check type
+                stmt.name  = left[0]
+                stmt.vtype = self.expect_type(False)
+                stmt.expr  = parse_expression(s[1])
+                self.idx = end_idx
+                if not stmt.vtype:
+                    stmt.type = STMT_ASSIGN
+                    return stmt
+                return stmt
+            elif s := split(line, COLON_EQUAL):
+                # declaration without type
+                left = s[0]
+                if len(left) != 1 or left[0].type != IDENTIFIER:
+                    err(f"expected identifer on left side of ':=', line {self.line}")
+                stmt.name = left[0]
+                stmt.expr = parse_expression(s[1])
+                self.idx = end_idx
+                return stmt
+
         # fallthrough means expression statement
-        self.back() # go back one
         stmt = Statement(STMT_EXPR, self.line)
         stmt.expr = self.expect_expr()
         return stmt
@@ -149,12 +196,11 @@ class stmt_parser:
     # Seeks a NEWLINE token and parses the expression in interval.
     # Returns expression. Raises error on EOF. Consumes NEWLINE token
     def expect_expr(self) -> Expression:
-        start_i, n = self.idx, 0
-        while t := self.advance(False):
-            if t.type == NEWLINE:
-                n = 1
-                break
-        token_range = self.tokens[start_i:self.idx-n]
+        end_idx = seek_token(self.tokens, NEWLINE, self.idx)
+        if end_idx == -1:
+            end_idx = len(self.tokens)
+        token_range = self.tokens[self.idx:end_idx]
+        self.idx = end_idx
         return parse_expression(token_range)
     
     # Checks if next token is identifier. Raises error. Consumes token
@@ -178,11 +224,12 @@ class stmt_parser:
         return parse_expression(interval)
 
     # Checks for type declaration (including colon). Raises error
-    # on invalid type tokens. Consumes type if one is found
+    # on invalid type tokens. Consumes type if one is found. Returns
+    # None if type is optional and one is not found
     def expect_type(self, must: bool = True) -> Type:
         if self.current().type != COLON:
             if not must:
-                return Type()
+                return None
             err(f"expected colon before type, line {self.line}")
         stack = []
         self.advance()

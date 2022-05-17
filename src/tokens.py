@@ -56,6 +56,7 @@ COMMA         = i()
 RETURN        = i()
 FUNC          = i()
 COLON         = i()
+COLON_EQUAL   = i()
 
 # Binary expression tokens in order of precedency
 AND           = i()
@@ -86,11 +87,13 @@ EXPR_VARIABLE = "VARIABLE"
 EXPR_ARGS     = "ARGS"
 
 # Statement types
-STMT_NONE   = "UNCOMPLETE_STMT"
-STMT_EXPR   = "EXPR"
-STMT_RETURN = "RETURN"
-STMT_FUNC   = "FUNCTION"
-STMT_BLOCK  = "BLOCK"
+STMT_NONE    = "UNCOMPLETE_STMT"
+STMT_EXPR    = "EXPR"
+STMT_RETURN  = "RETURN"
+STMT_FUNC    = "FUNCTION"
+STMT_BLOCK   = "BLOCK"
+STMT_DECLARE = "DECLARATION"
+STMT_ASSIGN  = "ASSIGNMENT"
 
 keyword_lookup = {
     "return": RETURN,
@@ -124,6 +127,7 @@ double_token_lookup = {
     "!=": NOT_EQUAL,
     "&&": AND,
     "||": OR,
+    ":=": COLON_EQUAL,
 }
 
 whitespace_lookup = {
