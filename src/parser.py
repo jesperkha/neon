@@ -83,6 +83,9 @@ class stmt_parser:
     
     def parse(self) -> list[Statement]:
         while self.idx < len(self.tokens):
+            if self.current().type == NEWLINE:
+                self.advance()
+                continue
             stmt = self.parse_stmt()
             self.statements.append(stmt)
         return self.statements
@@ -99,7 +102,7 @@ class stmt_parser:
             stmt = Statement(STMT_FUNC, self.line)
             stmt.name  = self.expect_identifier()
             stmt.expr  = self.expect_args()
-            stmt.vtype = self.expect_type()
+            stmt.vtype = self.expect_type(True)
             stmt.block = self.expect_block()
             return stmt
 
@@ -120,7 +123,7 @@ class stmt_parser:
         return self.tokens[self.idx]
     
     # Consumes and returns the current Token. Raises error on EOF
-    def advance(self, e: bool = False) -> Token:
+    def advance(self, e: bool = True) -> Token:
         if self.idx >= len(self.tokens):
             if e: err(f"unexpected end of input, line {self.line}")
             return None
@@ -138,7 +141,7 @@ class stmt_parser:
     # Looks at current token to check for the keyword (token type). If the
     # keyword is not found an error is raised. Consumes token
     def expect_keyword(self, keyword: int):
-        kw = self.advance(True)
+        kw = self.advance()
         if kw.type != keyword:
             kw_name = [k for k, v in keyword_lookup.items() if v == keyword][0]
             err(f"expected keyword '{kw_name}', found '{kw.lexeme}', line {self.line}")
@@ -147,7 +150,7 @@ class stmt_parser:
     # Returns expression. Raises error on EOF. Consumes NEWLINE token
     def expect_expr(self) -> Expression:
         start_i, n = self.idx, 0
-        while t := self.advance():
+        while t := self.advance(False):
             if t.type == NEWLINE:
                 n = 1
                 break
@@ -156,7 +159,7 @@ class stmt_parser:
     
     # Checks if next token is identifier. Raises error. Consumes token
     def expect_identifier(self) -> Token:
-        t = self.advance(True)
+        t = self.advance()
         if t.type != IDENTIFIER:
             err(f"expected identifier, got '{t.lexeme}', line {self.line}")
         return t
@@ -176,19 +179,20 @@ class stmt_parser:
 
     # Checks for type declaration (including colon). Raises error
     # on invalid type tokens. Consumes type
-    def expect_type(self) -> Type:
-        if self.advance(True).type != COLON:
-            print()
-            err(f"expected colon brefore type, line {self.line}")
+    def expect_type(self, must: bool = True) -> Type:
+        if not must and self.current().type != COLON:
+            # err(f"expected colon brefore type, line {self.line}")
+            return Type()
         stack = []
-        while t := self.advance(True):
+        self.advance()
+        while t := self.advance():
             if t.type == IDENTIFIER:
                 stack.append(t.lexeme)
                 break
             elif t.type == STAR:
                 stack.append("*")
             elif t.type == LEFT_SQUARE:
-                self.advance(True) # skip next bracket
+                self.advance() # skip next bracket
                 stack.append("[]")
             else:
                 err(f"invalid token in type: '{t.lexeme}', line {self.line}")
