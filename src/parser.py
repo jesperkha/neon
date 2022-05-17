@@ -101,7 +101,6 @@ class stmt_parser:
             stmt.expr  = self.expect_args()
             stmt.vtype = self.expect_type()
             stmt.block = self.expect_block()
-            interupt("func")
             return stmt
 
         # fallthrough means expression statement
@@ -200,7 +199,15 @@ class stmt_parser:
     def expect_block(self) -> Statement:
         if self.current().type != LEFT_BRACE:
             err(f"expected block, line {self.line}")
-        err("block not implemented yet")
+        
+        end_idx = seek(self.tokens, LEFT_BRACE, RIGHT_BRACE, self.idx)
+        if end_idx == -1:
+            err(f"expected right brace after block, line {self.line}")
+        interval = self.tokens[self.idx+1:end_idx]
+        self.idx = end_idx+1
+        stmt = Statement(STMT_BLOCK, self.line)
+        stmt.stmts = parse(interval)
+        return stmt
 
 # Recursively parses token list into an expression tree
 def parse_expression(tokens: list) -> Expression:

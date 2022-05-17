@@ -90,6 +90,7 @@ STMT_NONE   = "UNCOMPLETE_STMT"
 STMT_EXPR   = "EXPR"
 STMT_RETURN = "RETURN"
 STMT_FUNC   = "FUNCTION"
+STMT_BLOCK  = "BLOCK"
 
 keyword_lookup = {
     "return": RETURN,
