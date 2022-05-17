@@ -102,7 +102,7 @@ class stmt_parser:
             stmt = Statement(STMT_FUNC, self.line)
             stmt.name  = self.expect_identifier()
             stmt.expr  = self.expect_args()
-            stmt.vtype = self.expect_type(True)
+            stmt.vtype = self.expect_type(False)
             stmt.block = self.expect_block()
             return stmt
 
@@ -178,11 +178,12 @@ class stmt_parser:
         return parse_expression(interval)
 
     # Checks for type declaration (including colon). Raises error
-    # on invalid type tokens. Consumes type
+    # on invalid type tokens. Consumes type if one is found
     def expect_type(self, must: bool = True) -> Type:
-        if not must and self.current().type != COLON:
-            # err(f"expected colon brefore type, line {self.line}")
-            return Type()
+        if self.current().type != COLON:
+            if not must:
+                return Type()
+            err(f"expected colon before type, line {self.line}")
         stack = []
         self.advance()
         while t := self.advance():
@@ -201,8 +202,9 @@ class stmt_parser:
     # Checks for block statement. Consumes block and returns block
     # Raises error on no block, as well as internal statement parsing
     def expect_block(self) -> Statement:
-        if self.current().type != LEFT_BRACE:
-            err(f"expected block, line {self.line}")
+        t = self.current()
+        if t.type != LEFT_BRACE:
+            err(f"expected block, found '{t.lexeme}', line {self.line}")
         
         end_idx = seek(self.tokens, LEFT_BRACE, RIGHT_BRACE, self.idx)
         if end_idx == -1:
