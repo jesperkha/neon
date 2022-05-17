@@ -72,10 +72,6 @@ def verify_brackets(tokens: list[Token], start_t: int, end_t: int) -> bool:
 def parse(tokens: list) -> list[Statement]:
     return stmt_parser(tokens).parse()
 
-# Todo: implement type parser
-def parse_type(tokens: list) -> Type:
-    pass
-
 # Statement parser object to keep state when doing recursive parsing
 # Also makes it easier to do expect_x() parsing
 class stmt_parser:
@@ -96,25 +92,33 @@ class stmt_parser:
         typ = tok.type
 
         if typ == RETURN:
-            expr = self.expect_expr()
-            return Statement(STMT_RETURN, expr=expr)
+            stmt = Statement(STMT_RETURN, self.line)
+            stmt.expr = self.expect_expr()
+            return stmt
         elif typ == FUNC:
-            name  = self.expect_identifier()
-            args  = self.expect_args()
-            type  = self.expect_type()
-            block = self.expect_block()
-            return Statement(STMT_FUNC, name=name)
+            stmt = Statement(STMT_FUNC, self.line)
+            stmt.name  = self.expect_identifier()
+            stmt.expr  = self.expect_args()
+            stmt.vtype = self.expect_type()
+            stmt.block = self.expect_block()
+            interupt("func")
+            return stmt
 
         # fallthrough means expression statement
         self.back() # go back one
-        expr = self.expect_expr()
-        return Statement(STMT_EXPR, expr=expr)
+        stmt = Statement(STMT_EXPR, self.line)
+        stmt.expr = self.expect_expr()
+        return stmt
     
     # Peeks next token, raises error on EOF
     def peek(self) -> Token:
         if self.idx + 1 >= len(self.tokens):
             err(f"unexpected end of input, line {self.line}")
         return self.tokens[self.idx+1]
+    
+    # Returns current token. Does not consume it
+    def current(self) -> Token:
+        return self.tokens[self.idx]
     
     # Consumes and returns the current Token. Raises error on EOF
     def advance(self, e: bool = False) -> Token:
@@ -161,22 +165,42 @@ class stmt_parser:
     # Checks to see if the next tokens indicate an argument list. Raises
     # error on fail. Consumes tokens. RETURNED EXPR CAN BE NON-ARGS TOO
     def expect_args(self) -> Expression:
-        t = self.advance(True)
+        t = self.current()
         if t.type != LEFT_PAREN:
-            err(f"expected left paren before arg list, found '{t.lexeme}', line {self.line}")
-        self.back() # go back after checking for better error
+            err(f"expected arg list, line {self.line}")
         end_idx = seek(self.tokens, LEFT_PAREN, RIGHT_PAREN, self.idx)
         if end_idx == -1:
             err(f"expected right paren after arg list, line {self.line}")
         interval = self.tokens[self.idx+1:end_idx]
-        self.idx = end_idx
+        self.idx = end_idx + 1
         return parse_expression(interval)
 
+    # Checks for type declaration (including colon). Raises error
+    # on invalid type tokens. Consumes type
     def expect_type(self) -> Type:
-        err("expect_type() not implemented yet")
+        if self.advance(True).type != COLON:
+            print()
+            err(f"expected colon brefore type, line {self.line}")
+        stack = []
+        while t := self.advance(True):
+            if t.type == IDENTIFIER:
+                stack.append(t.lexeme)
+                break
+            elif t.type == STAR:
+                stack.append("*")
+            elif t.type == LEFT_SQUARE:
+                self.advance(True) # skip next bracket
+                stack.append("[]")
+            else:
+                err(f"invalid token in type: '{t.lexeme}', line {self.line}")
+        return Type() # Todo: create type object
     
+    # Checks for block statement. Consumes block and returns block
+    # Raises error on no block, as well as internal statement parsing
     def expect_block(self) -> Statement:
-        err("expect_block() not implemented yet")
+        if self.current().type != LEFT_BRACE:
+            err(f"expected block, line {self.line}")
+        err("block not implemented yet")
 
 # Recursively parses token list into an expression tree
 def parse_expression(tokens: list) -> Expression:

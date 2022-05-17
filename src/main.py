@@ -6,6 +6,8 @@ import os
 # util.DEBUG_MODE = True
 
 def main():
+    # a = "[]int"
+    # parser.parse_type(lexer.tokenize(a))
     a = "func main(): int {}"
     ast = parser.parse(lexer.tokenize(a))
 

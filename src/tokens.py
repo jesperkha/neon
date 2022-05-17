@@ -6,7 +6,7 @@ class Token:
         self.isfloat = False
 
 class Type:
-    def __init__(self) -> None:
+    def __init__(self):
         pass
 
 class Expression:
@@ -23,16 +23,14 @@ class Expression:
         self.operator: Token = None
 
 class Statement:
-    def __init__(self,
-        type: str,
-        line: int = 0,
-        expr: Expression = None,
-        name: Token = None,
-    ):
-        self.type = type
-        self.line = line
-        self.expr = expr
-        self.name = name
+    def __init__(self, type: str, line: int):
+        self.type  = type
+        self.line  = line
+        self.expr: Expression = None
+        self.block: Statement = None
+        self.name: Token = None
+        self.vtype: Type = None
+        self.stmts: list = []
 
 _i = 0
 def i():
