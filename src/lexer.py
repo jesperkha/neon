@@ -1,3 +1,10 @@
+# Lexer
+# 
+# This is neons lexer. It takes the raw text from a file and generates tokens from said
+# input. Symbols, identifers, strings, numbers, and keywords are all each their own token 
+# type. The lexer will also raise an error if it finds a symbol it does not recognise, if
+# a string is malformed, or if a number is invalid.
+
 from util import *
 from tokens import *
 

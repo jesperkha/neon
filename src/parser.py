@@ -1,3 +1,16 @@
+# Parser
+# 
+# This is neons parser. It handles parsing tokens into an abstract syntax tree (AST). The 
+# statement parser first looks at the token input and identifier what kind of statement to
+# parse i.e function, struct, variable declaration etc. Then it starts parsing the next
+# tokens, expecting them to be laid out as if the statement is written correctly. If the
+# parser notices an error, like a misplaced keyword, it will halt the compilation and print
+# an error.
+# 
+# There is also an expression parser which takes care of parsing complex expressions with
+# a lot of symbols and value into an expression tree. However, it does not evaluate the
+# expression, nor check for any type errors, or the values of used variables.
+
 from tokens import *
 from util import *
 
@@ -255,7 +268,9 @@ class stmt_parser:
                 stack.append("[]")
             else:
                 err(f"invalid token in type: '{t.lexeme}', line {self.line}")
-        return Type() # Todo: create type object
+
+        # Todo: (doing) create type object
+        return Type()
     
     # Checks for block statement. Consumes block and returns block
     # Raises error on no block, as well as internal statement parsing

@@ -1,3 +1,9 @@
+# Token definitions and data types
+# 
+# This file contains definitions for neons keywords, symbols, and data structures like ASTs.
+# Almost all other parts of the compiler uses this file. The definitions are made as dynamic
+# as possible to make it easy to add or remove tokens, type, or keywords.
+
 class Token:
     def __init__(self, type: int, lexeme: str, line: int):
         self.lexeme  = lexeme
@@ -6,8 +12,22 @@ class Token:
         self.isfloat = False
 
 class Type:
-    def __init__(self):
-        pass
+    def __init__(self, type: str):
+        self.type = type
+        # list of types in order of definition
+        self.complex: list[str] = []
+    
+    def set_kind(self):
+        if self.type in (TYPE_BOOL):
+            self.kind = KIND_BOOL
+        elif self.type in (TYPE_INT, TYPE_I8, TYPE_I16, TYPE_I32, TYPE_I64):
+            self.kind = KIND_INT
+        elif self.type in (TYPE_FLOAT, TYPE_F32, TYPE_F64):
+            self.kind = KIND_FLOAT
+        elif self.type in (TYPE_CHAR, TYPE_STRING):
+            self.kind = KIND_STRING
+        else:
+            self.kind = KIND_NONE
 
 class Expression:
     def __init__(self, type: str, tokens: list, line: int):
@@ -96,6 +116,27 @@ STMT_BLOCK   = "BLOCK"
 STMT_DECLARE = "DECLARATION"
 STMT_ASSIGN  = "ASSIGNMENT"
 STMT_PRINT   = "PRINT"
+
+# Type kinds
+KIND_NONE   = "K_NONE"
+KIND_STRING = "K_STRING"
+KIND_INT    = "K_INT"
+KIND_FLOAT  = "K_FLOAT"
+KIND_BOOL   = "K_BOOL"
+
+# Types
+TYPE_NONE   = "NONE"
+TYPE_STRING = "STRING"
+TYPE_CHAR   = "CHAR"
+TYPE_INT    = "INT"
+TYPE_FLOAT  = "FLOAT"
+TYPE_I8     = "I8"
+TYPE_I16    = "I16"
+TYPE_I32    = "I32"
+TYPE_I64    = "I64"
+TYPE_F32    = "F32"
+TYPE_F64    = "F64"
+TYPE_BOOL   = "BOOL"
 
 keyword_lookup = {
     "return": RETURN,
