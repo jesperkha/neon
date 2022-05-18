@@ -154,6 +154,12 @@ class stmt_parser:
                 self.idx = end_idx
                 return stmt
 
+        elif typ == PRINT:
+            self.expect_keyword(PRINT)
+            stmt = Statement(STMT_PRINT, self.line)
+            stmt.expr = self.expect_expr()
+            return stmt
+
         # fallthrough means expression statement
         stmt = Statement(STMT_EXPR, self.line)
         stmt.expr = self.expect_expr()

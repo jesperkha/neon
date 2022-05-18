@@ -57,6 +57,7 @@ RETURN        = i()
 FUNC          = i()
 COLON         = i()
 COLON_EQUAL   = i()
+PRINT         = i()
 
 # Binary expression tokens in order of precedency
 AND           = i()
@@ -94,10 +95,12 @@ STMT_FUNC    = "FUNCTION"
 STMT_BLOCK   = "BLOCK"
 STMT_DECLARE = "DECLARATION"
 STMT_ASSIGN  = "ASSIGNMENT"
+STMT_PRINT   = "PRINT"
 
 keyword_lookup = {
     "return": RETURN,
     "func":   FUNC,
+    "print":  PRINT,
 }
 
 symbol_lookup = {
