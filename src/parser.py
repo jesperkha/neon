@@ -85,12 +85,14 @@ def verify_brackets(tokens: list[Token], start_t: int, end_t: int) -> bool:
         elif tok.type == end_t: t -= 1
     return t == 0
 
-# Parses token list into list of statements
+# Parses token list into list of statements. Does not do any type- or
+# expression checks. Any malformed statement will raise and error and
+# halt execution. Does not know the nature of what it parses and only
+# sees deviance from what it expects as an error.
 def parse(tokens: list) -> list[Statement]:
     return stmt_parser(tokens).parse()
 
 # Statement parser object to keep state when doing recursive parsing
-# Also makes it easier to do expect_x() parsing
 class stmt_parser:
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
@@ -98,6 +100,7 @@ class stmt_parser:
         self.line = 0
         self.statements = []
     
+    # Parses the parsers token list into a list of Statement
     def parse(self) -> list[Statement]:
         while self.idx < len(self.tokens):
             if self.current().type == NEWLINE:
@@ -106,7 +109,9 @@ class stmt_parser:
             stmt = self.parse_stmt()
             self.statements.append(stmt)
         return self.statements
-    
+
+    # Parses single statement (and/or block), returns said statement.
+    # Does not do any type- or expression checks
     def parse_stmt(self) -> Statement:
         tok = self.current()
         typ = tok.type
