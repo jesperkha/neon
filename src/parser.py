@@ -112,10 +112,11 @@ class stmt_parser:
         self.idx = 0
         self.line = 0
         self.statements = []
+        self.length = len(tokens)
     
     # Parses the parsers token list into a list of Statement
     def parse(self) -> list[Statement]:
-        while self.idx < len(self.tokens):
+        while self.idx < self.length:
             if self.current().type == NEWLINE:
                 self.advance()
                 continue
@@ -147,6 +148,8 @@ class stmt_parser:
         elif typ == IDENTIFIER:
             stmt = Statement(STMT_DECLARE, self.line)
             end_idx = seek_token(self.tokens, NEWLINE, self.idx)
+            if end_idx == -1:
+                end_idx = self.length
             line = self.tokens[self.idx:end_idx]
             if s := split(line, EQUAL):
                 # declaration or asignment (depending on type present)
@@ -185,7 +188,7 @@ class stmt_parser:
     
     # Peeks next token, raises error on EOF
     def peek(self) -> Token:
-        if self.idx + 1 >= len(self.tokens):
+        if self.idx + 1 >= self.length:
             err(f"unexpected end of input, line {self.line}")
         return self.tokens[self.idx+1]
     
@@ -195,7 +198,7 @@ class stmt_parser:
     
     # Consumes and returns the current Token. Raises error on EOF
     def advance(self, e: bool = True) -> Token:
-        if self.idx >= len(self.tokens):
+        if self.idx >= self.length:
             if e: err(f"unexpected end of input, line {self.line}")
             return None
 
@@ -222,8 +225,9 @@ class stmt_parser:
     def expect_expr(self) -> Expression:
         end_idx = seek_token(self.tokens, NEWLINE, self.idx)
         if end_idx == -1:
-            end_idx = len(self.tokens)
+            end_idx = self.length
         token_range = self.tokens[self.idx:end_idx]
+        debug("aaa", token_range)
         self.idx = end_idx
         return parse_expression(token_range)
     
@@ -256,10 +260,12 @@ class stmt_parser:
                 return None
             err(f"expected colon before type, line {self.line}")
         stack = []
+        last  = None
         self.advance()
         while t := self.advance():
             if t.type == IDENTIFIER:
                 stack.append(t.lexeme)
+                last = t.lexeme
                 break
             elif t.type == STAR:
                 stack.append("*")
@@ -268,9 +274,10 @@ class stmt_parser:
                 stack.append("[]")
             else:
                 err(f"invalid token in type: '{t.lexeme}', line {self.line}")
+        if last in typeword_lookup:
+            return Type(typeword_lookup[last], stack)
 
-        # Todo: (doing) create type object
-        return Type()
+        return Type(TYPE_USRDEF, stack)
     
     # Checks for block statement. Consumes block and returns block
     # Raises error on no block, as well as internal statement parsing

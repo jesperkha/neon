@@ -12,10 +12,13 @@ class Token:
         self.isfloat = False
 
 class Type:
-    def __init__(self, type: str):
+    def __init__(self, type: str, complex: list = None):
         self.type = type
+        self.set_kind()
         # list of types in order of definition
-        self.complex: list[str] = []
+        self.complex: list[str] = complex
+        if not self.complex:
+            self.complex = [self.type]
     
     def set_kind(self):
         if self.type in (TYPE_BOOL):
@@ -28,6 +31,9 @@ class Type:
             self.kind = KIND_STRING
         else:
             self.kind = KIND_NONE
+    
+    def str(self) -> str:
+        return "".join(self.complex)
 
 class Expression:
     def __init__(self, type: str, tokens: list, line: int):
@@ -134,14 +140,37 @@ TYPE_I8     = "I8"
 TYPE_I16    = "I16"
 TYPE_I32    = "I32"
 TYPE_I64    = "I64"
+TYPE_U8     = "U8"
+TYPE_U16    = "U16"
+TYPE_U32    = "U32"
+TYPE_U64    = "U64"
 TYPE_F32    = "F32"
 TYPE_F64    = "F64"
 TYPE_BOOL   = "BOOL"
+TYPE_USRDEF = "USER_DEFINED"
 
 keyword_lookup = {
     "return": RETURN,
     "func":   FUNC,
     "print":  PRINT,
+}
+
+typeword_lookup = {
+    "int":    TYPE_INT,
+    "float":  TYPE_FLOAT,
+    "bool":   TYPE_BOOL,
+    "string": TYPE_STRING,
+    "char":   TYPE_CHAR,
+    "i8":     TYPE_I8,
+    "i16":    TYPE_I16,
+    "i32":    TYPE_I32,
+    "i64":    TYPE_I64,
+    "u8":     TYPE_U8,
+    "u16":    TYPE_U16,
+    "u32":    TYPE_U32,
+    "u64":    TYPE_U64,
+    "f32":    TYPE_F32,
+    "f64":    TYPE_F64,
 }
 
 symbol_lookup = {

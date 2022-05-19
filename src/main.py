@@ -18,11 +18,13 @@ def compile():
         util.err(f"could not find file '{filename}'")
 
     with open(filename, "r") as f:
-        pass
+        ast = parser.parse(lexer.tokenize(f.read()))
+        for s in ast:
+            util.inspect_stmt(s)
+
 
 def main():
     compile()
-
 
 if __name__ == "__main__":
     os.system("color")
