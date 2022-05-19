@@ -24,9 +24,11 @@
 
 ## About
 
-Neon is a statically typed language that transpiles to C. It is inspired by more modern languages like Rust and Go and has features that adhere to a more functional style of programming. Neons compiler ensures that no undefined C behaviour can occur and will generate template error handlers for unsafe and error-prone code. There are no object oriended features like classes and data is abstracted as little as possible. Neon also has its own statement for common bit manipulation and operations, making it easier to work with low level data.
+Neon is a statically typed language that transpiles to C. It is inspired by more modern languages like Rust and Go and has features that adhere to a more functional style of programming. Neons compiler ensures that no undefined C behaviour can occur and will generate template error handlers for unsafe and error-prone code. There are no object oriended features like classes and data is abstracted as little as possible. Neon also has its own statements for common bit manipulation and operations, making it easier to work with low level data.
 
-You can check out the [project status](changelog.md) as well as [feature ideas](ideas.md) that will be added. If you like the project, consider giving it a star 😉
+You can check out the [project status](changelog.md) as well as [feature ideas](ideas.md) that will be added. If you have any recommendations for language features please feel free to create an issue with the `idea` label.
+
+If you like the project, consider giving it a star 😉
 
 <br>
 
