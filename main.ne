@@ -1,4 +1,5 @@
-// some comment
+// in its current state the parser can only parse
+// functions, returns, declarations, and prints
 
 func main(): int {
     a := 0
