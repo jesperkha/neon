@@ -75,19 +75,20 @@ print sum // 4
 
 // In other languages you would need to either have some global
 // variables to access or even use a class. However, this is where
-// the 'keep' statement comes in play:
+// the 'st' keyword comes in play:
 func next_person(): string {
-    // Here you can define local variables that will keep their
-    // values between function calls
-    keep people := string["John", "Amy", "Carl"]
-    keep idx := 0
+    // You can define local variables that will keep their values
+    // between function calls by using the 'st' (store) prefix
+    st idx := 0
 
     person := people[idx]
     idx++
     return person
 }
 
-print next_person() // John
-print next_person() // Amy
-print next_person() // Carl
+people := string["John", "Amy", "Carl"]
+
+print next_person(people) // John
+print next_person(people) // Amy
+print next_person(people) // Carl
 ```
