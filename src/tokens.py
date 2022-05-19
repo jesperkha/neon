@@ -71,6 +71,7 @@ NUMBER        = i()
 SPACE         = i()
 NEWLINE       = i()
 TAB           = i()
+COMMENT       = i()
 STRING        = i()
 LEFT_PAREN    = i()
 RIGHT_PAREN   = i()
@@ -201,6 +202,7 @@ double_token_lookup = {
     "&&": AND,
     "||": OR,
     ":=": COLON_EQUAL,
+    "//": COMMENT,
 }
 
 whitespace_lookup = {

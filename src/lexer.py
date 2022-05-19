@@ -54,7 +54,17 @@ def tokenize(source: str) -> list[Token]:
         if char in symbol_lookup:
             dbtoken = char + nextchar # double token
             if dbtoken in double_token_lookup:
-                token_list.append(Token(double_token_lookup[dbtoken], dbtoken, line))
+                t = double_token_lookup[dbtoken]
+                
+                # skip to end of line for comments
+                if t == COMMENT:
+                    while idx < len(source):
+                        if source[idx] == "\n":
+                            break
+                        idx += 1
+                    continue
+
+                token_list.append(Token(t, dbtoken, line))
                 idx += 1 # skip next token
             else:
                 token_list.append(Token(symbol_lookup[char], char, line))
