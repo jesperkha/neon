@@ -388,7 +388,7 @@ def parse_expression(tokens: list) -> Expression:
         return group
 
     # array literal, can be empty
-    # Todo: re-implement but with check for type prefix
+    # Todo: re-implement array literal but with check for type prefix
     # if seek(tokens, LEFT_SQUARE, RIGHT_SQUARE) == len(tokens)-1:
     #     debug("array", tokens)
     #     inner = parse_expression(tokens[1:len(tokens)-1])
