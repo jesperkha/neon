@@ -1,7 +1,5 @@
 # Neon Language Documentation
 
-## Statements
-
 ### Print
 
 The built-in `print` statement lets you print out formatted values. Structs and arrays will be printed in a readable format.
