@@ -7,6 +7,10 @@ def err(msg: str):
     exit(1)
 
 
+def warn(msg: str):
+    print(f"\u001b[33mwarning\033[0m: {msg}")
+
+
 def debug(msg: str, tokens: list[Token] = None):
     if not DEBUG_MODE:
         return

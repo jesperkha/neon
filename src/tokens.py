@@ -18,7 +18,7 @@ class Type:
         # list of types in order of definition
         self.complex: list[str] = complex
         if not self.complex:
-            self.complex = [self.type]
+            self.complex = [self.type.lower()]
     
     def set_kind(self):
         if self.type in (TYPE_BOOL):
@@ -149,6 +149,7 @@ TYPE_F32    = "F32"
 TYPE_F64    = "F64"
 TYPE_BOOL   = "BOOL"
 TYPE_USRDEF = "USER_DEFINED"
+TYPE_FUNC   = "FUNCTION"
 
 keyword_lookup = {
     "return": RETURN,

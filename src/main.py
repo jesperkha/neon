@@ -1,6 +1,7 @@
 import util
 import lexer
 import parser
+import scanner
 import os
 import sys
 
@@ -19,8 +20,7 @@ def compile():
 
     with open(filename, "r") as f:
         ast = parser.parse(lexer.tokenize(f.read()))
-        for s in ast:
-            util.inspect_stmt(s)
+        scanner.scan(ast)
 
 
 def main():

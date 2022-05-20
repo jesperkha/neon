@@ -194,7 +194,9 @@ class stmt_parser:
     
     # Returns current token. Does not consume it
     def current(self) -> Token:
-        return self.tokens[self.idx]
+        cur = self.tokens[self.idx]
+        self.line = cur.line
+        return cur
     
     # Consumes and returns the current Token. Raises error on EOF
     def advance(self, e: bool = True) -> Token:
