@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run",
+            "type": "shell",
+            "command": "python src/main.py main.ne"
+        },
+        {
+            "label": "Test",
+            "type": "shell",
+            "command": "python src/test.py"
+        }
+    ]
+}
