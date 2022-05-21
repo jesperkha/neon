@@ -34,6 +34,14 @@ class Type:
     
     def str(self) -> str:
         return "".join(self.complex)
+    
+    def __eq__(self, o: object) -> bool:
+        if type(o) == str: # allow checking for type constant
+            return self.type == o
+        return self.str() == o.str()
+
+    def __str__(self) -> str:
+        return self.str()
 
 class Expression:
     def __init__(self, type: str, tokens: list, line: int):

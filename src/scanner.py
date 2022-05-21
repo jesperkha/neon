@@ -40,27 +40,37 @@ class scanner:
 
         if t == STMT_NONE:
             err(f"invalid statement, line {self.line}")
+
         elif t == STMT_DECLARE:
             expr_type = self.eval_expr(stmt.expr)
-            def_type  = stmt.vtype.str()
-            if expr_type != def_type:
-                err(f"incompatible types in assignment, expected {def_type}, got {expr_type}, line {self.line}")
             self.declare(stmt.name.lexeme, expr_type)
+            if stmt.vtype:
+                def_type = stmt.vtype
+                if expr_type != def_type:
+                    err(f"incompatible types in assignment, expected {def_type}, got {expr_type}, line {self.line}")
+            else: # colon equal declaration
+                stmt.vtype = expr_type
+
         elif t == STMT_ASSIGN:
             self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr))
+        
+        else:
+            err(f"scanning for {t} is not implemented yet")
     
     # Evaluates expression and checks for unmatched types, undefined variables etc
     # Returns the expressions evaluated type
-    def eval_expr(self, expr: Expression, allow_empty: bool = False) -> str:
-        return TYPE_NONE
+    def eval_expr(self, expr: Expression, allow_empty: bool = False) -> Type:
+        return Type(TYPE_NONE)
     
     # Declare new variable to current scope, throws an error if already declared.
     # Warns if a variable is being shadowed
-    def declare(self, name: str, type: str):
+    def declare(self, name: str, type: Type):
+        print(self.scope)
         if type == TYPE_FUNC and self.scope != 0:
             err(f"functions can only be declared at top level, line {self.line}")
-        # elif type != TYPE_FUNC and self.scope == 0:
-        #     err(f"illegal statement at top level, line {self.line}")
+        if type != TYPE_FUNC and self.scope == 0:
+            err(f"illegal statement at top level, line {self.line}")
+
         scope = self.scope_list[self.scope]
         if name in scope:
             err(f"'{name}' is already declared, line {self.line}")
@@ -71,10 +81,11 @@ class scanner:
 
     # Does not assign a value but checks if the variable is defined and that the
     # type matches the original value.
-    def assign(self, name: str, type: str):
+    def assign(self, name: str, type: Type):
         scope = self.scope_list[self.scope]
         if name not in scope:
             err(f"variable '{name}' must be declared before assignment, line {self.line}")
+
         prev = scope[name]
         if prev != type:
             err(f"incompatible types in assignment, expected {prev}, got {type}, line {self.line}")
