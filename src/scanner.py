@@ -71,7 +71,12 @@ class scanner:
             if tok.isfloat:
                 return Type(TYPE_FLOAT)
             return Type(TYPE_INT)
-
+        
+        elif t == EXPR_UNARY:
+            if expr.operator.type == MINUS:
+                return self.eval_expr(expr.right)
+            return Type(TYPE_BOOL) # not operator
+        
         return Type(TYPE_NONE)
     
     # Declare new variable to current scope, throws an error if already declared.
