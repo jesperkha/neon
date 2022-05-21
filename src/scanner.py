@@ -54,22 +54,30 @@ class scanner:
         elif t == STMT_ASSIGN:
             self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr))
         
-        else:
+        else: # Debug
             err(f"scanning for {t} is not implemented yet")
     
     # Evaluates expression and checks for unmatched types, undefined variables etc
     # Returns the expressions evaluated type
-    def eval_expr(self, expr: Expression, allow_empty: bool = False) -> Type:
+    def eval_expr(self, expr: Expression) -> Type:
+        t = expr.type
+        if t == EXPR_VARIABLE:
+            return self.get_var(expr.tokens[0].lexeme)
+        elif t == EXPR_LITERAL:
+            if expr.tokens[0].isfloat:
+                return Type(TYPE_FLOAT)
+            return Type(TYPE_INT)
+
         return Type(TYPE_NONE)
     
     # Declare new variable to current scope, throws an error if already declared.
     # Warns if a variable is being shadowed
     def declare(self, name: str, type: Type):
-        print(self.scope)
         if type == TYPE_FUNC and self.scope != 0:
             err(f"functions can only be declared at top level, line {self.line}")
-        if type != TYPE_FUNC and self.scope == 0:
-            err(f"illegal statement at top level, line {self.line}")
+        # Debug
+        # if type != TYPE_FUNC and self.scope == 0:
+        #     err(f"illegal statement at top level, line {self.line}")
 
         scope = self.scope_list[self.scope]
         if name in scope:
@@ -90,6 +98,16 @@ class scanner:
         if prev != type:
             err(f"incompatible types in assignment, expected {prev}, got {type}, line {self.line}")
         scope[name] = type
+    
+    # Gets variable type from lookup. Iterates through scope list backwards
+    def get_var(self, name: str) -> Type:
+        i = self.scope
+        while i > -1:
+            scope = self.scope_list[i]
+            if name in scope:
+                return scope[name]
+            i -= 1
+        err(f"'{name}' is undefined, line {self.line}")
 
     # Pushes into new scope
     def push_scope(self):
