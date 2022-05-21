@@ -73,28 +73,33 @@ def i():
     return _i
 
 # Token types
-EQUAL         = i()
 IDENTIFIER    = i()
+TRUE          = i()
+FALSE         = i()
 NUMBER        = i()
-SPACE         = i()
+STRING        = i()
+CHAR          = i()
+
 NEWLINE       = i()
+SPACE         = i()
 TAB           = i()
 COMMENT       = i()
-STRING        = i()
+
+EQUAL         = i()
+COLON_EQUAL   = i()
+COLON         = i()
+COMMA         = i()
+
 LEFT_PAREN    = i()
 RIGHT_PAREN   = i()
 LEFT_BRACE    = i()
 RIGHT_BRACE   = i()
 LEFT_SQUARE   = i()
 RIGHT_SQUARE  = i()
-COMMA         = i()
+
 RETURN        = i()
 FUNC          = i()
-COLON         = i()
-COLON_EQUAL   = i()
 PRINT         = i()
-TRUE          = i()
-FALSE         = i()
 
 # Binary expression tokens in order of precedency
 AND           = i()
@@ -110,6 +115,8 @@ MINUS         = i()
 STAR          = i()
 SLASH         = i()
 MODULO        = i()
+BIT_AND       = i()
+BIT_OR        = i()
 NOT           = i()
 
 # Expression types
@@ -205,6 +212,8 @@ symbol_lookup = {
     "<": LESS,
     ",": COMMA,
     ":": COLON,
+    "&": BIT_AND,
+    "|": BIT_OR,
 }
 
 double_token_lookup = {

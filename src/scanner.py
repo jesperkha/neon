@@ -47,7 +47,7 @@ class scanner:
             if stmt.vtype:
                 def_type = stmt.vtype
                 if expr_type != def_type:
-                    err(f"incompatible types in assignment, expected {def_type}, got {expr_type}, line {self.line}")
+                    err(f"mismatched types in assignment, expected {def_type}, got {expr_type}, line {self.line}")
             else: # colon equal declaration
                 stmt.vtype = expr_type
 
@@ -66,6 +66,10 @@ class scanner:
 
         elif t == EXPR_LITERAL:
             tok = expr.tokens[0]
+            if tok.type == STRING:
+                return Type(TYPE_STRING)
+            if tok.type == CHAR:
+                return Type(TYPE_CHAR)
             if tok.type in (TRUE, FALSE):
                 return Type(TYPE_BOOL)
             if tok.isfloat:
@@ -74,8 +78,32 @@ class scanner:
         
         elif t == EXPR_UNARY:
             if expr.operator.type == MINUS:
-                return self.eval_expr(expr.right)
-            return Type(TYPE_BOOL) # not operator
+                right = self.eval_expr(expr.right)
+                if right.kind not in (KIND_INT, KIND_FLOAT):
+                    err(f"invalid operator '-' for type {right}, line {self.line}")
+                return right
+            return Type(TYPE_BOOL) # NOT operator
+        
+        elif t == EXPR_BINARY:
+            left  = self.eval_expr(expr.left)
+            right = self.eval_expr(expr.right)
+            if left != right:
+                err(f"mismatched types {left} and {right} in expression, line {self.line}")
+
+            op = expr.operator
+            is_and_or = op.type in (AND, OR)
+            checks = [
+                # AND or OR operators for non-booleans
+                left != TYPE_BOOL and is_and_or,
+                # not AND or OR operators for booleans
+                left == TYPE_BOOL and not is_and_or,
+                # not ==, !=, or + for strings
+                left == TYPE_STRING and op not in (EQUAL_EQUAL, NOT_EQUAL, PLUS),
+                # Todo: complete checks for binary op
+            ]
+            print(left)
+            for c in checks:
+                if c: err(f"invalid operator '{op.lexeme}' for types {left}, line {self.line}")
         
         return Type(TYPE_NONE)
     
@@ -101,11 +129,11 @@ class scanner:
     def assign(self, name: str, type: Type):
         scope = self.scope_list[self.scope]
         if name not in scope:
-            err(f"variable '{name}' must be declared before assignment, line {self.line}")
+            err(f"'{name}' must be declared before assignment, line {self.line}")
 
         prev = scope[name]
         if prev != type:
-            err(f"incompatible types in assignment, expected {prev}, got {type}, line {self.line}")
+            err(f"mismatched types in assignment, expected {prev}, got {type}, line {self.line}")
         scope[name] = type
     
     # Gets variable type from lookup. Iterates through scope list backwards
