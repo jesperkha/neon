@@ -93,6 +93,8 @@ FUNC          = i()
 COLON         = i()
 COLON_EQUAL   = i()
 PRINT         = i()
+TRUE          = i()
+FALSE         = i()
 
 # Binary expression tokens in order of precedency
 AND           = i()
@@ -163,6 +165,8 @@ keyword_lookup = {
     "return": RETURN,
     "func":   FUNC,
     "print":  PRINT,
+    "true":   TRUE,
+    "false":  FALSE,
 }
 
 typeword_lookup = {

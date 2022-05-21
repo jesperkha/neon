@@ -63,8 +63,12 @@ class scanner:
         t = expr.type
         if t == EXPR_VARIABLE:
             return self.get_var(expr.tokens[0].lexeme)
+
         elif t == EXPR_LITERAL:
-            if expr.tokens[0].isfloat:
+            tok = expr.tokens[0]
+            if tok.type in (TRUE, FALSE):
+                return Type(TYPE_BOOL)
+            if tok.isfloat:
                 return Type(TYPE_FLOAT)
             return Type(TYPE_INT)
 
