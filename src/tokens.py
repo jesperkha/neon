@@ -23,10 +23,8 @@ class Type:
     def set_kind(self):
         if self.type in (TYPE_BOOL):
             self.kind = KIND_BOOL
-        elif self.type in (TYPE_INT, TYPE_I8, TYPE_I16, TYPE_I32, TYPE_I64):
-            self.kind = KIND_INT
-        elif self.type in (TYPE_FLOAT, TYPE_F32, TYPE_F64):
-            self.kind = KIND_FLOAT
+        elif self.type in (TYPE_INT, TYPE_I8, TYPE_I16, TYPE_I32, TYPE_I64, TYPE_FLOAT, TYPE_F32, TYPE_F64):
+            self.kind = KIND_NUMBER
         elif self.type in (TYPE_CHAR, TYPE_STRING):
             self.kind = KIND_STRING
         else:
@@ -115,8 +113,12 @@ MINUS         = i()
 STAR          = i()
 SLASH         = i()
 MODULO        = i()
-BIT_AND       = i()
 BIT_OR        = i()
+BIT_XOR       = i()
+BIT_AND       = i()
+BIT_LSHIFT    = i()
+BIT_RSHIFT    = i()
+BIT_NEGATE    = i()
 NOT           = i()
 
 # Expression types
@@ -144,8 +146,7 @@ STMT_PRINT   = "PRINT"
 # Type kinds
 KIND_NONE   = "K_NONE"
 KIND_STRING = "K_STRING"
-KIND_INT    = "K_INT"
-KIND_FLOAT  = "K_FLOAT"
+KIND_NUMBER = "K_NUMBER"
 KIND_BOOL   = "K_BOOL"
 
 # Types
@@ -214,6 +215,8 @@ symbol_lookup = {
     ":": COLON,
     "&": BIT_AND,
     "|": BIT_OR,
+    "~": BIT_NEGATE,
+    "^": BIT_XOR,
 }
 
 double_token_lookup = {
@@ -225,6 +228,8 @@ double_token_lookup = {
     "||": OR,
     ":=": COLON_EQUAL,
     "//": COMMENT,
+    ">>": BIT_RSHIFT,
+    "<<": BIT_LSHIFT,
 }
 
 whitespace_lookup = {

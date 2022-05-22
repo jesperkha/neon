@@ -5,6 +5,19 @@ from util import *
 def scan(ast: list[Statement]):
     scanner(ast).scan()
 
+# Allows for easier checks on whether a given operator is allowed for a type
+pairs = [
+    [KIND_NUMBER, (PLUS, MINUS, STAR, SLASH, MODULO, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL, NOT_EQUAL, EQUAL_EQUAL, BIT_AND, BIT_OR)],
+    [KIND_BOOL, (AND, OR, EQUAL_EQUAL, NOT_EQUAL)],
+    [KIND_STRING, (PLUS, EQUAL_EQUAL, NOT_EQUAL)]
+]
+
+inverse_op_lookup = {}
+for p in pairs:
+    for k in p[1]:
+        if k in inverse_op_lookup: inverse_op_lookup[k].append(p[0])
+        else: inverse_op_lookup[k] = [p[0]]
+
 class scanner:
     def __init__(self, ast: list[Statement]):
         self.ast = ast
@@ -40,6 +53,9 @@ class scanner:
 
         if t == STMT_NONE:
             err(f"invalid statement, line {self.line}")
+        
+        elif t == STMT_EXPR:
+            self.eval_expr(stmt.expr)
 
         elif t == STMT_DECLARE:
             expr_type = self.eval_expr(stmt.expr)
@@ -77,11 +93,14 @@ class scanner:
             return Type(TYPE_INT)
         
         elif t == EXPR_UNARY:
-            if expr.operator.type == MINUS:
-                right = self.eval_expr(expr.right)
-                if right.kind not in (KIND_INT, KIND_FLOAT):
-                    err(f"invalid operator '-' for type {right}, line {self.line}")
+            right = self.eval_expr(expr.right)
+            op = expr.operator
+            if op.type in (MINUS, BIT_NEGATE):
+                if right.kind != KIND_NUMBER:
+                    err(f"invalid operator '{op.lexeme}' for type {right}, line {self.line}")
                 return right
+            if right.kind != KIND_BOOL:
+                err(f"invalid operator '{op.lexeme}' for type {right}, line {self.line}")
             return Type(TYPE_BOOL) # NOT operator
         
         elif t == EXPR_BINARY:
@@ -91,19 +110,8 @@ class scanner:
                 err(f"mismatched types {left} and {right} in expression, line {self.line}")
 
             op = expr.operator
-            is_and_or = op.type in (AND, OR)
-            checks = [
-                # AND or OR operators for non-booleans
-                left != TYPE_BOOL and is_and_or,
-                # not AND or OR operators for booleans
-                left == TYPE_BOOL and not is_and_or,
-                # not ==, !=, or + for strings
-                left == TYPE_STRING and op not in (EQUAL_EQUAL, NOT_EQUAL, PLUS),
-                # Todo: complete checks for binary op
-            ]
-            print(left)
-            for c in checks:
-                if c: err(f"invalid operator '{op.lexeme}' for types {left}, line {self.line}")
+            if left.kind not in inverse_op_lookup[op.type]:
+                err(f"invalid operator '{op.lexeme}' for types {left}, line {self.line}")
         
         return Type(TYPE_NONE)
     

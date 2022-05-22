@@ -22,7 +22,6 @@ def compile():
         ast = parser.parse(lexer.tokenize(f.read()))
         scanner.scan(ast)
 
-
 def main():
     compile()
 

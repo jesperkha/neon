@@ -357,7 +357,7 @@ def parse_expression(tokens: list) -> Expression:
         # unary expression. first token must be the operator and only one operator
         # can be present. it must also be a valid unary operator. error is handled
         # when parsing binary
-        if op_idx == 0 and num_ops == 1 and first in (MINUS, NOT):
+        if op_idx == 0 and num_ops == 1 and first in (MINUS, NOT, BIT_NEGATE):
             debug("unary", tokens)
             unary = Expression(EXPR_UNARY, tokens, line)
             unary.right = parse_expression(tokens[1:])
@@ -370,6 +370,9 @@ def parse_expression(tokens: list) -> Expression:
         if op_idx == 0 or op_idx == len(tokens)-1:
             side = "left" if op_idx == 0 else "right"
             err(f"expected expression on {side} side of '{operator.lexeme}', line {line}")
+        
+        if operator.type in (NOT, BIT_NEGATE):
+            err(f"invalid binary operator '{operator.lexeme}', line {line}")
 
         expr = Expression(EXPR_BINARY, tokens, line)
         expr.left  = parse_expression(tokens[:op_idx])

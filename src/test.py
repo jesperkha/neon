@@ -3,6 +3,7 @@ import lexer
 import tokens
 import os
 import util
+import scanner
 
 # util.DEBUG_MODE = True
 
@@ -32,11 +33,23 @@ stmt_cases = [
     ["a = 0", tokens.STMT_ASSIGN],
 ]
 
+scan_cases_valid = [
+    "a := 0",
+    "a: int = 0",
+    "a: float = 0.0",
+    "a: bool = true",
+    "1 + 1",
+    "1.0 + 1.0",
+    '"a" + "b"',
+]
+
+scan_cases_invalid = [
+
+]
+
 def test_cases(prefix: str, cases: list):
-    passed = True
     for idx, c in enumerate(cases):
         print(f"{prefix} test {idx+1}: \033[91mFAIL\033[0m ", end="")
-        # try:
         tks = lexer.tokenize(c[0])
         if prefix == "expr":
             ast = parser.parse_expression(tks)
@@ -45,13 +58,19 @@ def test_cases(prefix: str, cases: list):
             ast = stmts[0]
         errorif(ast.type != c[1], f"(FAIL) expected '{c[1]}', got '{ast.type}'")
         print(f"\r{prefix} test {idx+1}: \033[92mpass\033[0m")
-        # except:
-        #     passed = False
-    return passed
 
 
 if __name__ == "__main__":
     os.system("color")
-    if test_cases("expr", expr_cases) and test_cases("stmt", stmt_cases):
-        print("-----------------")
-        print("all tests passed!")
+    test_cases("expr", expr_cases)
+    test_cases("stmt", stmt_cases)
+    i = 1
+    for c in scan_cases_valid:
+        print(f"scan test {i}: \033[91mFAIL\033[0m ", end="")
+        scanner.scan(parser.parse(lexer.tokenize(c)))
+        print(f"\rscan test {i}: \033[92mpass\033[0m")
+        i += 1
+    
+    print("-----------------")
+    print("all tests passed!")
+    
