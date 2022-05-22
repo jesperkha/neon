@@ -2,7 +2,7 @@
 <div align="center">
   <img src=".github/logo.svg" alt="Logo" width="130">
 
-  <h3 align="center">A mordern C-like language</h3>
+  <h3 align="center">A modern C-like language</h3>
 
   <p align="center">
     Neon is a statically typed transpiled language inspired

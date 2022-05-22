@@ -18,7 +18,7 @@ class Type:
         # list of types in order of definition
         self.complex: list[str] = complex
         if not self.complex:
-            self.complex = [self.type]
+            self.complex = [self.type.lower()]
     
     def set_kind(self):
         if self.type in (TYPE_BOOL):
@@ -34,6 +34,14 @@ class Type:
     
     def str(self) -> str:
         return "".join(self.complex)
+    
+    def __eq__(self, o: object) -> bool:
+        if type(o) == str: # allow checking for type constant
+            return self.type == o
+        return self.str() == o.str()
+
+    def __str__(self) -> str:
+        return self.str()
 
 class Expression:
     def __init__(self, type: str, tokens: list, line: int):
@@ -65,25 +73,32 @@ def i():
     return _i
 
 # Token types
-EQUAL         = i()
 IDENTIFIER    = i()
+TRUE          = i()
+FALSE         = i()
 NUMBER        = i()
-SPACE         = i()
+STRING        = i()
+CHAR          = i()
+
 NEWLINE       = i()
+SPACE         = i()
 TAB           = i()
 COMMENT       = i()
-STRING        = i()
+
+EQUAL         = i()
+COLON_EQUAL   = i()
+COLON         = i()
+COMMA         = i()
+
 LEFT_PAREN    = i()
 RIGHT_PAREN   = i()
 LEFT_BRACE    = i()
 RIGHT_BRACE   = i()
 LEFT_SQUARE   = i()
 RIGHT_SQUARE  = i()
-COMMA         = i()
+
 RETURN        = i()
 FUNC          = i()
-COLON         = i()
-COLON_EQUAL   = i()
 PRINT         = i()
 
 # Binary expression tokens in order of precedency
@@ -100,6 +115,8 @@ MINUS         = i()
 STAR          = i()
 SLASH         = i()
 MODULO        = i()
+BIT_AND       = i()
+BIT_OR        = i()
 NOT           = i()
 
 # Expression types
@@ -149,11 +166,14 @@ TYPE_F32    = "F32"
 TYPE_F64    = "F64"
 TYPE_BOOL   = "BOOL"
 TYPE_USRDEF = "USER_DEFINED"
+TYPE_FUNC   = "FUNCTION"
 
 keyword_lookup = {
     "return": RETURN,
     "func":   FUNC,
     "print":  PRINT,
+    "true":   TRUE,
+    "false":  FALSE,
 }
 
 typeword_lookup = {
@@ -192,6 +212,8 @@ symbol_lookup = {
     "<": LESS,
     ",": COMMA,
     ":": COLON,
+    "&": BIT_AND,
+    "|": BIT_OR,
 }
 
 double_token_lookup = {

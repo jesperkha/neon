@@ -47,6 +47,7 @@ def tokenize(source: str) -> list[Token]:
                 err(f"unterminated string, line {line}")
 
             string += '"'
+            # Todo: add char type for ''
             token_list.append(Token(STRING, string, line))
             continue
 

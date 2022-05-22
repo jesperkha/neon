@@ -194,7 +194,9 @@ class stmt_parser:
     
     # Returns current token. Does not consume it
     def current(self) -> Token:
-        return self.tokens[self.idx]
+        cur = self.tokens[self.idx]
+        self.line = cur.line
+        return cur
     
     # Consumes and returns the current Token. Raises error on EOF
     def advance(self, e: bool = True) -> Token:
@@ -311,7 +313,7 @@ def parse_expression(tokens: list) -> Expression:
     # a single token list can only be a literal value
     if len(tokens) == 1:
         debug(f"single token", tokens)
-        if first in (STRING, NUMBER):
+        if first in (STRING, NUMBER, TRUE, FALSE):
             return Expression(EXPR_LITERAL, tokens, line)
         elif first == IDENTIFIER:
             return Expression(EXPR_VARIABLE, tokens, line)
@@ -388,7 +390,7 @@ def parse_expression(tokens: list) -> Expression:
         return group
 
     # array literal, can be empty
-    # Todo: re-implement but with check for type prefix
+    # Todo: re-implement array literal but with check for type prefix
     # if seek(tokens, LEFT_SQUARE, RIGHT_SQUARE) == len(tokens)-1:
     #     debug("array", tokens)
     #     inner = parse_expression(tokens[1:len(tokens)-1])
