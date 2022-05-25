@@ -1,5 +1,7 @@
 # Neon Language Documentation
 
+> **DISCLAIMER:** None of these features have been added yet since the compiler is not finished, however, all of these features will be present in the final product
+
 ## Hello World
 
 In a file ending with `.ne` write:
