@@ -15,8 +15,6 @@ a := num[char]    // gets the 8 first bits (length of char), a is now of type ch
 b := num[char ->] // gets the 8 last bits
 ```
 
-<br>
-
 ## `using` statement
 
 ```go
@@ -31,9 +29,9 @@ func foo() {
     // which will only be used here, you can instead create a new scope
     // that only has access to the variables you want to include:
     using a, b {
-        print(a) // 1
-        print(b) // hello
-        print(c) // error: c is not defined
+        println(a) // 1
+        println(b) // hello
+        println(c) // error: c is not defined
     }
 
     // You can also output a value, however this means you have to specify
@@ -44,8 +42,6 @@ func foo() {
     }
 }
 ```
-
-<br>
 
 ## Haskells `where` syntax
 
@@ -60,10 +56,8 @@ sum := a + b where {
     b = c
 }
 
-print(sum) // 4
+println(sum) // 4
 ```
-
-<br>
 
 ## Keeping function state
 
@@ -87,18 +81,18 @@ func next_person(p: []string): string {
 func main() {
     people := ["John", "Amy", "Carl"]
     
-    print(next_person(people)) // John
-    print(next_person(people)) // Amy
-    print(next_person(people)) // Carl
+    println(next_person(people)) // John
+    println(next_person(people)) // Amy
+    println(next_person(people)) // Carl
 }
 ```
 
 ## Built-in functions
 
 ```go
-print(s: string)   // Prints string out to stdout
-println(s: string) // Same as print() but with a newline at the end
-error(s: string)   // Prints s out to stderr and exits with code 1
+print(s: string)   // printlns string out to stdout
+println(s: string) // Same as println() but with a newline at the end
+error(s: string)   // printlns s out to stderr and exits with code 1
 exit(c: int)	   // Halts execution and exits with code c
 
 // Returns an array of t with length l. t cannot be an array type
@@ -107,4 +101,28 @@ make(t: TYPE, l: int)
 
 len(arr: []any) // Returns length of array arr
 cap(arr: []any) // Returns cap of array arr
+```
+
+## Macros
+
+Have som macros predefined which will be inserted at compilation. They can even be reflective like the line number and filename:
+
+```go
+func main() {
+    num_args  := len($args)
+    prog_name := $args[0]
+    cur_line  := $line
+    filename  := $filename
+}
+```
+
+Turns into:
+
+```go
+func main() {
+    num_args  := len(["main.exe", "some", "args"])
+    prog_name := ["main.exe", "some", "args"][0]
+    cur_line  := 4
+    filename  := "main.ne"
+}
 ```
