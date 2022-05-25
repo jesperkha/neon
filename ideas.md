@@ -23,19 +23,17 @@ b := num[char ->] // gets the 8 last bits
 // Lets say you have a long function that does a lot of
 // calculations with a lot of variables:
 func foo() {
-    ...
-
     a := 1
     b := "hello"
-    c := int[1, 2, 3]
+    c := [1, 2, 3]
 
     // Instead of extracting some lines of code into another function
     // which will only be used here, you can instead create a new scope
     // that only has access to the variables you want to include:
     using a, b {
-        print a // 1
-        print b // hello
-        print c // error: c is not defined
+        print(a) // 1
+        print(b) // hello
+        print(c) // error: c is not defined
     }
 
     // You can also output a value, however this means you have to specify
@@ -62,7 +60,7 @@ sum := a + b where {
     b = c
 }
 
-print sum // 4
+print(sum) // 4
 ```
 
 <br>
@@ -76,19 +74,37 @@ print sum // 4
 // In other languages you would need to either have some global
 // variables to access or even use a class. However, this is where
 // the 'st' keyword comes in play:
-func next_person(): string {
+func next_person(p: []string): string {
     // You can define local variables that will keep their values
-    // between function calls by using the 'st' (store) prefix
-    st idx := 0
+    // between function calls by using the 'store' prefix
+    store idx := 0
 
-    person := people[idx]
-    idx++
+    person := p[idx]
+    idx += 1
     return person
 }
 
-people := string["John", "Amy", "Carl"]
+func main() {
+    people := ["John", "Amy", "Carl"]
+    
+    print(next_person(people)) // John
+    print(next_person(people)) // Amy
+    print(next_person(people)) // Carl
+}
+```
 
-print next_person(people) // John
-print next_person(people) // Amy
-print next_person(people) // Carl
+## Built-in functions
+
+```go
+print(s: string)   // Prints string out to stdout
+println(s: string) // Same as print() but with a newline at the end
+error(s: string)   // Prints s out to stderr and exits with code 1
+exit(c: int)	   // Halts execution and exits with code c
+
+// Returns an array of t with length l. t cannot be an array type
+// Used as memory allocation. TYPE represents a type name (int, string etc)
+make(t: TYPE, l: int)
+
+len(arr: []any) // Returns length of array arr
+cap(arr: []any) // Returns cap of array arr
 ```
