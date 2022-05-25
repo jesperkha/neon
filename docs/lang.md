@@ -1,6 +1,6 @@
 # Neon Language Documentation
 
-> **DISCLAIMER:** None of these features have been added yet since the compiler is not finished, however, all of these features will be present in the final product
+> **DISCLAIMER:** None of these features have been added yet since the compiler is not finished. However, all of these features will be present in the final product
 
 ## Hello World
 
@@ -14,7 +14,7 @@ func main() {
 
 Compile and run by using the command `neon run <filename>`, when done it should print out `hello world` to the terminal. You just successfully created your first Neon program!
 
-In Neon, functions are declared with the `func` keyword followed by their name. The `main` function will be the entry point of your program, similar to most compiled languages. Unlike C, you dont need to return the exit code. On success the program will exit with code `0`, on failure `1`. To specify a custum exit code use the built-in `exit()` function.
+In Neon, functions are declared with the `func` keyword followed by their name. The `main` function will be the entry point of your program, similar to most compiled languages. Unlike C, you dont need to return the exit code. On success the program will exit with code `0`, on failure `1`. To specify a custom exit code use the built-in `exit()` function.
 
 The output binary is deleted after running. To keep it, run `neon build <filename>` instead. To just build the C files without compiling, run `neon gen <filename>` (this will create a new directory called `__neon__` and dump the files there).
 
@@ -52,9 +52,17 @@ height: f32 = 1.83
 friends: []string = ["Amy", "Carl", "Fred"]
 ```
 
-When declaring variables using the `:=` operator the variables type is automatically set based on the right hand value. Here `name` will be `string` and `age` will be `int`. You can also specify the type after a colon `:`.
+When declaring variables using the `:=` operator the variables type is automatically set based on the right hand value. Here `name` will be `string` and `age` will be `int`. Another way to declare variables is to define a type along with it. The type comes after the colon `:` and must match the right hand values type. However, this declaration uses a single equal sign `=` instead.
 
 The `:=` operator will always infer the generic type of the right hand value. For example, any integer will be typed as `int` (`i64`), any float will be typed as `float` (`f64`) etc.
+
+Also notice the difference between declarations and assignment:
+
+```go
+a := 0     // declaration with :=
+b: int = 0 // declaration with type suffix and =
+c = 0      // assignment with =
+```
 
 Variables cannot be defined at the global scope (top level). Unused variables and variable shadowing is not recommended and will raise a warning. Warnings do not terminate compilation, but will be printed to the terminal.
 
@@ -85,8 +93,8 @@ any
 Number literals can have different types: `1` is an `int`, but `1.0` is a `float`. Mismatched types are not allowed in expressions, so to fix any type differences you can use casting:
 
 ```go
-1 + 1.0      // error: mismatched types int and float
-f64(1) + 1.0 // ok since float is f64
+1 + 1.0        // error: mismatched types int and float
+float(1) + 1.0 // ok
 ```
 
 ### Strings
@@ -117,12 +125,16 @@ c: char = 'a'
 ```go
 a := [1, 2, 3]
 b: []char = ['a', 'b', 'c']
+
+// This is not allowed since the compiler wont
+// know which type the array contains
+c := []
 ```
 
 Arrays can only hold one type, which is defined either by the variable definition or the first element of the array. You can use casting to define a more specific type of array:
 
 ```go
-[u16(0), 0, 0] // Array literal of u16s
+[u16(0), 0, 0] // Array literal of u16
 ```
 
 You can get the value at an index `i` with `arr[i]`. Negative indexing is also allowed: `arr[-i]` (this is equivalent to `arr[len(arr)-i]`; the last element)
@@ -131,10 +143,11 @@ To append elements to an array use the `+` operator. The right hand value can ei
 
 ```go
 arr := [1, 2]
-arr = arr + 3
-arr += [4, 5]
+arr = arr + 3 // append 3
+arr += [4, 5] // append 4 and 5
+arr = 0 + arr // add 0 to beginning
 
-println(arr) // [1, 2, 3, 4, 5]
+println(arr) // [0, 1, 2, 3, 4, 5]
 ```
 
 Arrays have two built-in properties which you can access with the respective function:
@@ -144,16 +157,16 @@ Arrays have two built-in properties which you can access with the respective fun
 
 > Neon automatically resizes arrays to fit the elements and arrays are always 0 initialized.
 
-Neon uses arrays as a replacement to memory pointers. In C you would have to allocate a chunk of memory using `malloc()` for example. However, in Neon the `make()` function is used for memory allocation. It is given the type for the array and a size:
-
-```go
-// This initializes an array of ints with length 1024
-nums := make(int, 1024)
-```
-
 All built-in array functions:
 
 - `len()`: returns length of array
 - `cap()`: returns capacity of array
 - `pop()`: removes and returns the last element
 - `clear()`: empties array, does not change the capacity
+
+Neon uses arrays as a replacement to memory pointers. In C you would have to allocate a chunk of memory using `malloc()` for example, but in Neon the `make()` function is used for memory allocation. It is given the type for the array and a size:
+
+```go
+// This initializes an array of ints with length 1024
+nums := make(int, 1024)
+```
