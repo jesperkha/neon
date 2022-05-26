@@ -126,3 +126,16 @@ func main() {
     filename  := "main.ne"
 }
 ```
+
+## Defer
+
+```go
+func foo() {
+    file := openfile(...)
+    defer close(file) // Will push this action to the bottom of the function
+
+    ...
+
+    // close() is executed here
+}
+```
