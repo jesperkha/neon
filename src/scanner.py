@@ -6,6 +6,7 @@ def scan(ast: list[Statement]):
     scanner(ast).scan()
 
 # Allows for easier checks on whether a given operator is allowed for a type
+# Todo: find better solution for type and op matching
 pairs = [
     [KIND_NUMBER, (PLUS, MINUS, STAR, SLASH, MODULO, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL, NOT_EQUAL, EQUAL_EQUAL, BIT_AND, BIT_OR)],
     [KIND_BOOL, (AND, OR, EQUAL_EQUAL, NOT_EQUAL)],
@@ -79,6 +80,9 @@ class scanner:
         t = expr.type
         if t == EXPR_VARIABLE:
             return self.get_var(expr.tokens[0].lexeme)
+        
+        elif t == EXPR_GROUP:
+            return self.eval_expr(expr.inner)
 
         elif t == EXPR_LITERAL:
             tok = expr.tokens[0]
@@ -106,12 +110,15 @@ class scanner:
         elif t == EXPR_BINARY:
             left  = self.eval_expr(expr.left)
             right = self.eval_expr(expr.right)
+            # Todo: test for different type and op combinations
             if left != right:
                 err(f"mismatched types {left} and {right} in expression, line {self.line}")
 
             op = expr.operator
             if left.kind not in inverse_op_lookup[op.type]:
                 err(f"invalid operator '{op.lexeme}' for types {left}, line {self.line}")
+            
+            err("binary scan not implemented yet")
         
         return Type(TYPE_NONE)
     
