@@ -9,14 +9,11 @@
     <br>
     by more modern languages such as Rust and Go.
     <br />
-    <a href="https://github.com/jesperkha/neon/blob/main/docs/lang.md"><strong>Documentation »</strong></a>
-    <br />
-    <br />
-    <!-- <a href="https://github.com/jesperkha/Fizz/tree/main/examples">Examples</a> -->
-    ·
-    <a href="https://github.com/jesperkha/Fizz/issues">Report Bug</a>
-    ·
-    <!-- <a href="#installation">Download</a> -->
+    <a href="https://github.com/jesperkha/neon/blob/main/docs/lang.md">Documentation</a>
+    •
+    <a href="https://github.com/jesperkha/Fizz/issues">Report issue</a>
+    •
+    <a href="https://github.com/jesperkha/neon/blob/main/changelog.md">Changelog</a>
   </p>
 </div>
 
