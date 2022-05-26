@@ -2,6 +2,16 @@
 
 > **DISCLAIMER:** None of these features have been added yet since the compiler is not finished. However, all of these features will be present in the final product
 
+## Introduction
+
+Neon is a statically typed compiled language. It is designed to be a more modern version of C, but still keeps control and minimal abstraction. Syntactically it's similar to Go, but many additional features are inspired by languages like Haskell and Rust.
+
+Neon aims to give a better experience when working with lower level data. Additionally, it's easy to port C libraries to Neon. This means you can spend less time re-inventing the wheel and writing long-winded ports for simple libraries, and instead quickly start working alongside a C codebase.
+
+## Installation
+
+Neon is not yet in a state where it can be installed or even run
+
 ## Hello World
 
 In a file ending with `.ne` write:
@@ -170,3 +180,36 @@ Neon uses arrays as a replacement to memory pointers. In C you would have to all
 // This initializes an array of ints with length 1024
 nums := make(int, 1024)
 ```
+
+## Statements
+
+### If
+
+```go
+name := "Carl"
+
+if name == "Carl" {
+    println("Hello, Carl!")
+} else if name == "John" {
+    println("Hello, John!")
+} else {
+    println("Who are you?")
+}
+```
+
+The `if` statement is exactly the same as most languages. However, unlike some, it does not need the parenthesies around the expression.
+
+Logical operators:
+- `==`: *is equal*
+- `!=`: *not equal*
+- `&&`: *logical and*
+- `||`: *logical or*
+- `<`, `>`, `<=`, `>=`: *less than, greater than, less or equal to, greater or equal to*
+- `in`: *is member*, checks to see if the left value is a member of the right value:
+    ```go
+    "dog" in ["cat", "dog", "fox"] // true
+    ```
+- `is`: *type equality*, checks to see if the left value is of the right type:
+    ```go
+    123 is int // true
+    ```
