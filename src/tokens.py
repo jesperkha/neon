@@ -27,6 +27,8 @@ class Type:
             self.kind = KIND_NUMBER
         elif self.type in (TYPE_CHAR, TYPE_STRING):
             self.kind = KIND_STRING
+        elif self.type == TYPE_ARRAY:
+            self.kind = KIND_ARRAY
         else:
             self.kind = KIND_NONE
     
@@ -148,6 +150,7 @@ KIND_NONE   = "K_NONE"
 KIND_STRING = "K_STRING"
 KIND_NUMBER = "K_NUMBER"
 KIND_BOOL   = "K_BOOL"
+KIND_ARRAY  = "K_ARRAY"
 
 # Types
 TYPE_NONE   = "NONE"
@@ -168,6 +171,7 @@ TYPE_F64    = "F64"
 TYPE_BOOL   = "BOOL"
 TYPE_USRDEF = "USER_DEFINED"
 TYPE_FUNC   = "FUNCTION"
+TYPE_ARRAY  = "ARRAY"
 
 keyword_lookup = {
     "return": RETURN,

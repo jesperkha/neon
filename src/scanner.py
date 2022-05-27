@@ -5,20 +5,6 @@ from util import *
 def scan(ast: list[Statement]):
     scanner(ast).scan()
 
-# Allows for easier checks on whether a given operator is allowed for a type
-# Todo: find better solution for type and op matching
-pairs = [
-    [KIND_NUMBER, (PLUS, MINUS, STAR, SLASH, MODULO, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL, NOT_EQUAL, EQUAL_EQUAL, BIT_AND, BIT_OR)],
-    [KIND_BOOL, (AND, OR, EQUAL_EQUAL, NOT_EQUAL)],
-    [KIND_STRING, (PLUS, EQUAL_EQUAL, NOT_EQUAL)]
-]
-
-inverse_op_lookup = {}
-for p in pairs:
-    for k in p[1]:
-        if k in inverse_op_lookup: inverse_op_lookup[k].append(p[0])
-        else: inverse_op_lookup[k] = [p[0]]
-
 class scanner:
     def __init__(self, ast: list[Statement]):
         self.ast = ast
@@ -110,14 +96,36 @@ class scanner:
         elif t == EXPR_BINARY:
             left  = self.eval_expr(expr.left)
             right = self.eval_expr(expr.right)
-            # Todo: test for different type and op combinations
-            if left != right:
-                err(f"mismatched types {left} and {right} in expression, line {self.line}")
-
             op = expr.operator
-            if left.kind not in inverse_op_lookup[op.type]:
-                err(f"invalid operator '{op.lexeme}' for types {left}, line {self.line}")
+
+            # Number operators
+            if op.type in (STAR, SLASH, MINUS, LESS, GREATER, GREATER_EQUAL, LESS_EQUAL, BIT_AND, BIT_OR, BIT_XOR):
+                # Kind must be number and types must match
+                if left.kind != KIND_NUMBER:
+                    err(f"expected left expression to be a number, line {self.line}")
+                if right.kind != KIND_NUMBER:
+                    err(f"expected right expression to be a number, line {self.line}")
+                if left != right:
+                    err(f"mismatched types {left} and {right} in expression, line {self.line}")
+                return left
             
+            if op.type == PLUS:
+                if right.kind == KIND_ARRAY or left.kind == KIND_ARRAY:
+                    # Todo: check if new values type matches array type
+                    return Type(TYPE_ARRAY)
+                # Todo: make function for this check:
+                if right != left:
+                    err(f"mismatched types {left} and {right} in expression, line {self.line}")
+                if left.kind != KIND_NUMBER:
+                    err(f"expected left expression to be a number, line {self.line}")
+                if right.kind != KIND_NUMBER:
+                    err(f"expected right expression to be a number, line {self.line}")
+
+            if op.type in (BIT_LSHIFT, BIT_RSHIFT):
+                # Todo: bit shift type check
+                pass
+
+            # Todo: test for different type and op combinations
             err("binary scan not implemented yet")
         
         return Type(TYPE_NONE)
