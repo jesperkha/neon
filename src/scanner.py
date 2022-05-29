@@ -87,34 +87,21 @@ class scanner:
             op = expr.operator
             if op.type in (MINUS, BIT_NEGATE):
                 if right.kind != KIND_NUMBER:
-                    err(f"invalid operator '{op.lexeme}' for type {right}, line {self.line}")
+                    err(f"invalid operator '{op}' for type {right}, line {self.line}")
                 return right
             if right.kind != KIND_BOOL:
-                err(f"invalid operator '{op.lexeme}' for type {right}, line {self.line}")
+                err(f"invalid operator '{op}' for type {right}, line {self.line}")
             return Type(TYPE_BOOL) # NOT operator
         
         elif t == EXPR_BINARY:
             left  = self.eval_expr(expr.left)
             right = self.eval_expr(expr.right)
             op = expr.operator
+            if right.kind == KIND_ARRAY or left.kind == KIND_ARRAY:
+                # Todo: check if new values type matches array type
+                return Type(TYPE_ARRAY)
 
-            # Number operators
-            if op.type in (STAR, SLASH, MINUS, LESS, GREATER, GREATER_EQUAL, LESS_EQUAL, BIT_AND, BIT_OR, BIT_XOR):
-                return self.eval_kinds(left, right, KIND_NUMBER, KIND_NUMBER)
-            
-            if op.type == PLUS:
-                if right.kind == KIND_ARRAY or left.kind == KIND_ARRAY:
-                    # Todo: check if new values type matches array type
-                    return Type(TYPE_ARRAY)
-                # else it should be number
-                return self.eval_kinds(left, right, KIND_NUMBER, KIND_NUMBER)
-
-            if op.type in (BIT_LSHIFT, BIT_RSHIFT):
-                # Todo: bit shift type check
-                pass
-
-            # Todo: test for different type and op combinations
-            err("binary scan not implemented yet")
+            return self.check_binary_types(op, left, right)
         
         return Type(TYPE_NONE)
     
@@ -168,11 +155,11 @@ class scanner:
         self.scope_list.pop()
 
     # Matches two type kinds, raises error on mismatch
-    def eval_kinds(self, left_t: Type, right_t: Type, expect_left: str, expect_right: str) -> Type:
-        if left_t.kind != expect_left:
-            err(f"expected left expressions to be {expect_left}, got {left_t}, line {self.line}")
-        if right_t.kind != expect_right:
-            err(f"expected right expressions to be {expect_right}, got {right_t}, line {self.line}")
-        if left_t != right_t:
-            err(f"mismatched types {left_t} and {right_t} in expression, line {self.line}")
-        return left_t
+    def check_binary_types(self, op: Token, left: Type, right: Type) -> Type:
+        # Todo: implement the remaining ops
+        for n in (left, right):
+            if op.type not in binary_op_combos[n.kind]:
+                err(f"invalid operator '{op}' for type {n}, line {self.line}")
+        if left != right:
+            err(f"mismatched types {left} and {right} in expression, line {self.line}")
+        return left

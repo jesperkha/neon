@@ -10,6 +10,9 @@ class Token:
         self.line    = line
         self.type    = type
         self.isfloat = False
+    
+    def __str__(self) -> str:
+        return self.lexeme
 
 class Type:
     def __init__(self, type: str, complex: list = None):
@@ -23,7 +26,7 @@ class Type:
     def set_kind(self):
         if self.type in (TYPE_BOOL):
             self.kind = KIND_BOOL
-        elif self.type in (TYPE_INT, TYPE_I8, TYPE_I16, TYPE_I32, TYPE_I64, TYPE_FLOAT, TYPE_F32, TYPE_F64):
+        elif self.type in (TYPE_INT, TYPE_I8, TYPE_I16, TYPE_I32, TYPE_I64, TYPE_U8, TYPE_U16, TYPE_U32, TYPE_U64, TYPE_FLOAT, TYPE_F32, TYPE_F64):
             self.kind = KIND_NUMBER
         elif self.type in (TYPE_CHAR, TYPE_STRING):
             self.kind = KIND_STRING
@@ -240,4 +243,11 @@ whitespace_lookup = {
     " ": SPACE,
     "\n": NEWLINE,
     "\t": TAB
+}
+
+binary_op_combos = {
+    KIND_NUMBER: (PLUS, MINUS, STAR, SLASH, MODULO, NOT_EQUAL, EQUAL_EQUAL, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL, BIT_AND, BIT_OR, BIT_XOR),
+    KIND_STRING: (PLUS, NOT_EQUAL, EQUAL_EQUAL),
+    KIND_ARRAY: (PLUS, NOT_EQUAL, EQUAL_EQUAL),
+    KIND_BOOL: (AND, OR, EQUAL_EQUAL, NOT_EQUAL),
 }
