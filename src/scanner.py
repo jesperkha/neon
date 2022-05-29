@@ -90,9 +90,9 @@ class scanner:
             if expr.inner.type == EXPR_ARGS:
                 types = [self.eval_expr(typ) for typ in expr.inner.exprs]
                 inner_t = types[0]
-                for t in types:
+                for idx, t in enumerate(types):
                     if t != inner_t:
-                        err(f"mismatched types in array, expected {inner_t}, got {t}, line {self.line}")
+                        err(f"type of index {idx} did not match the first element in array literal; expected {inner_t}, got {t}, line {self.line}")
                 return Type(TYPE_ARRAY, sub_type=inner_t)
 
             inner_t = self.eval_expr(expr.inner)

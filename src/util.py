@@ -2,30 +2,40 @@ from tokens import *
 
 DEBUG_MODE = False
 
+def text_red(msg: str) -> str:
+    return f"\033[91m{msg}\033[0m"
+
+def text_yellow(msg: str) -> str:
+    return f"\u001b[33m{msg}\033[0m"
+
+def text_blue(msg: str) -> str:
+    return f"\033[94m{msg}\033[0m"
+
+def text_green(msg: str) -> str:
+    return f"\033[92m{msg}\033[0m"
+
+
 def err(msg: str):
-    print(f"\033[91merror\033[0m: {msg}")
+    print(f"{text_red('error')}: {msg}")
     exit(1)
 
-
 def warn(msg: str):
-    print(f"\u001b[33mwarning\033[0m: {msg}")
+    print(f"{text_yellow('warning')}: {msg}")
 
+def interupt(msg: str):
+    print(f"{text_green('interupt')}: {msg}")
+    exit()
 
 def debug(msg: str, tokens: list[Token] = None):
     if not DEBUG_MODE:
         return
-    print(f"\033[94mdebug:\033[0m {msg}", end="")
+    print(f"{text_blue('debug')}: {msg}", end="")
     if tokens:
         s = ""
         for t in tokens:
             s += t.lexeme
         print(f", tokens: {s}", end="")
     print()
-
-
-def interupt(msg: str):
-    print(f"\033[92minterupt:\033[0m {msg}")
-    exit()
 
 
 def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):

@@ -41,15 +41,12 @@ scan_cases_valid = [
     "1 + 1",
     "1.0 + 1.0",
     '"a" + "b"',
-]
-
-scan_cases_invalid = [
-
+    "[1, 2.0]",
 ]
 
 def test_cases(prefix: str, cases: list):
     for idx, c in enumerate(cases):
-        print(f"{prefix} test {idx+1}: \033[91mFAIL\033[0m ", end="")
+        print(f"{prefix} test {idx+1}: {util.text_red('FAIL')} ", end="")
         tks = lexer.tokenize(c[0])
         if prefix == "expr":
             ast = parser.parse_expression(tks)
@@ -57,7 +54,7 @@ def test_cases(prefix: str, cases: list):
             stmts = parser.parse(tks)
             ast = stmts[0]
         errorif(ast.type != c[1], f"(FAIL) expected '{c[1]}', got '{ast.type}'")
-        print(f"\r{prefix} test {idx+1}: \033[92mpass\033[0m")
+        print(f"\r{prefix} test {idx+1}: {util.text_green('pass')}")
 
 
 if __name__ == "__main__":
@@ -66,9 +63,9 @@ if __name__ == "__main__":
     test_cases("stmt", stmt_cases)
     i = 1
     for c in scan_cases_valid:
-        print(f"scan test {i}: \033[91mFAIL\033[0m ", end="")
+        print(f"scan test {i}: {util.text_red('FAIL')} ", end="")
         scanner.scan(parser.parse(lexer.tokenize(c)))
-        print(f"\rscan test {i}: \033[92mpass\033[0m")
+        print(f"\rscan test {i}: {util.text_green('pass')}")
         i += 1
     
     print("-----------------")
