@@ -81,7 +81,7 @@ class scanner:
             if tok.isfloat:
                 return Type(TYPE_FLOAT)
             return Type(TYPE_INT)
-        
+
         elif t == EXPR_UNARY:
             right = self.eval_expr(expr.right)
             op = expr.operator
