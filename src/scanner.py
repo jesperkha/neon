@@ -1,4 +1,5 @@
 # Scanner
+from sre_constants import LITERAL
 from tokens import *
 from util import *
 
@@ -67,6 +68,9 @@ class scanner:
         if t == EXPR_VARIABLE:
             return self.get_var(expr.tokens[0].lexeme)
         
+        elif t == EXPR_EMPTY:
+            return Type(TYPE_NONE)
+        
         elif t == EXPR_GROUP:
             return self.eval_expr(expr.inner)
 
@@ -81,6 +85,18 @@ class scanner:
             if tok.isfloat:
                 return Type(TYPE_FLOAT)
             return Type(TYPE_INT)
+        
+        elif t == EXPR_ARRAY:
+            if expr.inner.type == EXPR_ARGS:
+                types = [self.eval_expr(typ) for typ in expr.inner.exprs]
+                inner_t = types[0]
+                for t in types:
+                    if t != inner_t:
+                        err(f"mismatched types in array, expected {inner_t}, got {t}, line {self.line}")
+                return Type(TYPE_ARRAY, sub_type=inner_t)
+
+            inner_t = self.eval_expr(expr.inner)
+            return Type(TYPE_ARRAY, sub_type=inner_t)
 
         elif t == EXPR_UNARY:
             right = self.eval_expr(expr.right)
