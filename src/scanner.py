@@ -100,26 +100,14 @@ class scanner:
 
             # Number operators
             if op.type in (STAR, SLASH, MINUS, LESS, GREATER, GREATER_EQUAL, LESS_EQUAL, BIT_AND, BIT_OR, BIT_XOR):
-                # Kind must be number and types must match
-                if left.kind != KIND_NUMBER:
-                    err(f"expected left expression to be a number, line {self.line}")
-                if right.kind != KIND_NUMBER:
-                    err(f"expected right expression to be a number, line {self.line}")
-                if left != right:
-                    err(f"mismatched types {left} and {right} in expression, line {self.line}")
-                return left
+                return self.eval_kinds(left, right, KIND_NUMBER, KIND_NUMBER)
             
             if op.type == PLUS:
                 if right.kind == KIND_ARRAY or left.kind == KIND_ARRAY:
                     # Todo: check if new values type matches array type
                     return Type(TYPE_ARRAY)
-                # Todo: make function for this check:
-                if right != left:
-                    err(f"mismatched types {left} and {right} in expression, line {self.line}")
-                if left.kind != KIND_NUMBER:
-                    err(f"expected left expression to be a number, line {self.line}")
-                if right.kind != KIND_NUMBER:
-                    err(f"expected right expression to be a number, line {self.line}")
+                # else it should be number
+                return self.eval_kinds(left, right, KIND_NUMBER, KIND_NUMBER)
 
             if op.type in (BIT_LSHIFT, BIT_RSHIFT):
                 # Todo: bit shift type check
@@ -178,3 +166,13 @@ class scanner:
     def pop_scope(self):
         self.scope -= 1
         self.scope_list.pop()
+
+    # Matches two type kinds, raises error on mismatch
+    def eval_kinds(self, left_t: Type, right_t: Type, expect_left: str, expect_right: str) -> Type:
+        if left_t.kind != expect_left:
+            err(f"expected left expressions to be {expect_left}, got {left_t}, line {self.line}")
+        if right_t.kind != expect_right:
+            err(f"expected right expressions to be {expect_right}, got {right_t}, line {self.line}")
+        if left_t != right_t:
+            err(f"mismatched types {left_t} and {right_t} in expression, line {self.line}")
+        return left_t
