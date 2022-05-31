@@ -17,7 +17,7 @@ class Token:
 class Type:
     def __init__(self, type: str, complex: list = None, sub_type: str = None):
         self.type = type
-        self.sub_t = TYPE_NONE
+        self.sub_t = sub_type or TYPE_NONE
         self.set_kind()
 
         # list of types in order of definition

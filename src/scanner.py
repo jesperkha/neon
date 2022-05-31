@@ -113,9 +113,14 @@ class scanner:
             left  = self.eval_expr(expr.left)
             right = self.eval_expr(expr.right)
             op = expr.operator
-            if right.kind == KIND_ARRAY or left.kind == KIND_ARRAY:
-                # Todo: check if new values type matches array type
-                return Type(TYPE_ARRAY)
+            # check operator
+            for n in (left, right):
+                print(left, right)
+                if op.type not in binary_op_combos[n.kind]:
+                    err(f"invalid operator '{op}' for type {n}, line {self.line}")
+
+            if right == TYPE_ARRAY or left == TYPE_ARRAY:
+                return self.check_array_types(left, right)
 
             return self.check_binary_types(op, left, right)
         
@@ -173,9 +178,22 @@ class scanner:
     # Matches two type kinds, raises error on mismatch
     def check_binary_types(self, op: Token, left: Type, right: Type) -> Type:
         # Todo: implement the remaining ops
-        for n in (left, right):
-            if op.type not in binary_op_combos[n.kind]:
-                err(f"invalid operator '{op}' for type {n}, line {self.line}")
+
         if left != right:
             err(f"mismatched types {left} and {right} in expression, line {self.line}")
+        return left
+
+    # Matches array and value types, raises error on mismatch
+    def check_array_types(self, left: Type, right: Type) -> Type:
+        e = "new element does not match the array type; expected {}, got {}, line {}"
+        if right == TYPE_ARRAY and left != TYPE_ARRAY:
+            if right.sub_t != left: err(e.format(right.sub_t, left, self.line))
+            return right
+
+        if right != TYPE_ARRAY and left == TYPE_ARRAY:
+            if left.sub_t != right: err(e.format(left.sub_t, right, self.line))
+            return left
+
+        if left.sub_t != right.sub_t:
+            err(f"mismatched array types in expression; {left.sub_t} and {right.sub_t}, line {self.line}")
         return left
