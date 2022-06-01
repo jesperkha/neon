@@ -112,17 +112,7 @@ class scanner:
         elif t == EXPR_BINARY:
             left  = self.eval_expr(expr.left)
             right = self.eval_expr(expr.right)
-            op = expr.operator
-            # check operator
-            for n in (left, right):
-                print(left, right)
-                if op.type not in binary_op_combos[n.kind]:
-                    err(f"invalid operator '{op}' for type {n}, line {self.line}")
-
-            if right == TYPE_ARRAY or left == TYPE_ARRAY:
-                return self.check_array_types(left, right)
-
-            return self.check_binary_types(op, left, right)
+            return self.check_binary_types(expr.operator, left, right)
         
         return Type(TYPE_NONE)
     
@@ -134,7 +124,6 @@ class scanner:
         # Debug
         # if type != TYPE_FUNC and self.scope == 0:
         #     err(f"illegal statement at top level, line {self.line}")
-
         scope = self.scope_list[self.scope]
         if name in scope:
             err(f"'{name}' is already declared, line {self.line}")
@@ -176,12 +165,17 @@ class scanner:
         self.scope_list.pop()
 
     # Matches two type kinds, raises error on mismatch
+    # Todo: implement the remaining ops
     def check_binary_types(self, op: Token, left: Type, right: Type) -> Type:
-        # Todo: implement the remaining ops
+        for n in (left, right): # check operator
+            if op.type not in binary_op_combos[n.kind]:
+                err(f"invalid operator '{op}' for type {n}, line {self.line}")
 
-        if left != right:
-            err(f"mismatched types {left} and {right} in expression, line {self.line}")
-        return left
+        if right == TYPE_ARRAY or left == TYPE_ARRAY:
+            return self.check_array_types(left, right)
+
+        if left == right: return left
+        err(f"mismatched types {left} and {right} in expression, line {self.line}")
 
     # Matches array and value types, raises error on mismatch
     def check_array_types(self, left: Type, right: Type) -> Type:
