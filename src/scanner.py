@@ -167,6 +167,13 @@ class scanner:
     # Matches two type kinds, raises error on mismatch
     # Todo: implement the remaining ops
     def check_binary_types(self, op: Token, left: Type, right: Type) -> Type:
+        if op.type == IN:
+            if right != TYPE_ARRAY:
+                err(f"expected right expression to be array, got {right}, line {self.line}")
+            if left != right.sub_t:
+                err(f"left expression did not match array type; expected {right.sub_t}, got {left}, line {self.line}") 
+            return Type(TYPE_BOOL)
+            
         for n in (left, right): # check operator
             if op.type not in binary_op_combos[n.kind]:
                 err(f"invalid operator '{op}' for type {n}, line {self.line}")

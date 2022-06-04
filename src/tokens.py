@@ -109,10 +109,11 @@ PRINT         = i()
 # Binary expression tokens in order of precedency
 AND           = i()
 OR            = i()
-GREATER       = i()
-LESS          = i()
 EQUAL_EQUAL   = i()
 NOT_EQUAL     = i()
+IN            = i()
+GREATER       = i()
+LESS          = i()
 GREATER_EQUAL = i()
 LESS_EQUAL    = i()
 PLUS          = i()
@@ -184,6 +185,7 @@ keyword_lookup = {
     "print":  PRINT,
     "true":   TRUE,
     "false":  FALSE,
+    "in":     IN,
 }
 
 typeword_lookup = {
