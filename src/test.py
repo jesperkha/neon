@@ -42,6 +42,7 @@ scan_cases_valid = [
     "1.0 + 1.0",
     '"a" + "b"',
     "[1, 2]",
+    "1 in [1, 2, 3]",
 ]
 
 def test_cases(prefix: str, cases: list):

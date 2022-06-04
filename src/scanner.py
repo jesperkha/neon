@@ -113,7 +113,19 @@ class scanner:
             left  = self.eval_expr(expr.left)
             right = self.eval_expr(expr.right)
             return self.check_binary_types(expr.operator, left, right)
-        
+
+        # Todo: scan call expression
+        elif t == EXPR_CALL:
+            pass
+
+        # Todo: scan index expression
+        elif t == EXPR_INDEX:
+            pass
+
+        # Todo: scan args expression
+        elif t == EXPR_ARGS:
+            pass
+
         return Type(TYPE_NONE)
     
     # Declare new variable to current scope, throws an error if already declared.
@@ -173,10 +185,25 @@ class scanner:
             if left != right.sub_t:
                 err(f"left expression did not match array type; expected {right.sub_t}, got {left}, line {self.line}") 
             return Type(TYPE_BOOL)
-            
+
         for n in (left, right): # check operator
             if op.type not in binary_op_combos[n.kind]:
                 err(f"invalid operator '{op}' for type {n}, line {self.line}")
+
+        if op.type in (BIT_OR, BIT_XOR, BIT_AND, BIT_LSHIFT, BIT_RSHIFT):
+            if op.type in (BIT_LSHIFT, BIT_RSHIFT):
+                # check if right is unsigned int
+                if right.type not in COLLECTION_UNSIGNED:
+                    err(f"expected unsigned int in shift expression, got {right}, line {self.line}")
+                return left
+            
+            # Todo: check for bit length of number
+            return left
+
+        if op.type == MODULO:
+            if right.type not in COLLECTION_UNSIGNED:
+                err(f"expected unsigned int in modulo expression, got {right}, line {self.line}")
+            return Type(TYPE_INT)
 
         if right == TYPE_ARRAY or left == TYPE_ARRAY:
             return self.check_array_types(left, right)
