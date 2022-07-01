@@ -43,6 +43,7 @@ scan_cases_valid = [
     '"a" + "b"',
     "[1, 2]",
     "1 in [1, 2, 3]",
+    "[][0]",
 ]
 
 def test_cases(prefix: str, cases: list):
@@ -72,3 +73,4 @@ if __name__ == "__main__":
     print("-----------------")
     print("all tests passed!")
     
+

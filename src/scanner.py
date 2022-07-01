@@ -118,13 +118,23 @@ class scanner:
         elif t == EXPR_CALL:
             pass
 
-        # Todo: scan index expression
         elif t == EXPR_INDEX:
-            pass
+            arr = self.eval_expr(expr.array)
+            if arr != TYPE_ARRAY:
+                err(f"type {arr.type} is not indexable, line {self.line}")
 
-        # Todo: scan args expression
+            index = self.eval_expr(expr.inner)
+            if index not in COLLECTION_UNSIGNED:
+                err(f"expected index to be integer, got {index}, line {self.line}")
+
+            # Todo: handle negative indexing
+            # Todo: check index out of range
+            return arr.sub_t
+
         elif t == EXPR_ARGS:
-            pass
+            # args is parsed manually by statements and expressions that use it
+            # other instances are errors
+            err(f"unexpected argument list, line {self.line}")
 
         return Type(TYPE_NONE)
     
@@ -198,6 +208,7 @@ class scanner:
                 return left
             
             # Todo: check for bit length of number
+            # Todo: add runtime err for negative numbers
             return left
 
         if op.type == MODULO:

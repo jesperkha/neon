@@ -179,6 +179,7 @@ TYPE_USRDEF = "USER_DEFINED"
 TYPE_FUNC   = "FUNCTION"
 TYPE_ARRAY  = "ARRAY"
 
+# TYPE_INT is also in this collection to include number literals (negatives checked at runtime)
 COLLECTION_UNSIGNED = (TYPE_INT, TYPE_U8, TYPE_U16, TYPE_U32, TYPE_U64)
 
 keyword_lookup = {
