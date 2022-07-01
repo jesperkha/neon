@@ -105,7 +105,7 @@ cap(arr: []any) // Returns cap of array arr
 
 ## Macros
 
-Have som macros predefined which will be inserted at compilation. They can even be reflective like the line number and filename:
+Neon also has some macros predefined which will be inserted at compilation. They can even be reflective like the line number and filename:
 
 ```go
 func main() {
@@ -138,4 +138,16 @@ func foo() {
 
     // close() is executed here
 }
+```
+
+## Namespaces
+
+```go
+namespace foo {
+	func bar() {
+		println("hello")
+	}
+}
+
+foo::bar() // hello
 ```
