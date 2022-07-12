@@ -1,5 +1,4 @@
 # Scanner
-from sre_constants import LITERAL
 from tokens import *
 from util import *
 
@@ -20,21 +19,117 @@ class scanner:
         self.scope_list = [{}]
 
     # Scans entire AST, returns nothing, raises error at first fault.
+    # Todo: create map for statement/expression type to handler
     def scan(self):
-        idx = 0
-        while idx < len(self.ast):
-            stmt = self.ast[idx]
-            self.scan_stmt(stmt)
-            idx += 1
-    
-    # Scans block statement while keeping scanner state
-    def scan_block(self, block: Statement):
-        self.push_scope()
-        for s in block.stmts:
-            self.scan_stmt(s)
-        self.pop_scope()
+        pass
 
-    # Scans a single statement, dependent on current state of scanner
+    # Declare new variable to current scope, throws an error if already declared.
+    # Warns if a variable is being shadowed
+    def declare(self, name: str, type: Type):
+        if type == TYPE_FUNC and self.scope != 0:
+            err(f"functions can only be declared at top level, line {self.line}")
+        # Debug
+        # if type != TYPE_FUNC and self.scope == 0:
+        #     err(f"illegal statement at top level, line {self.line}")
+        scope = self.scope_list[self.scope]
+        if name in scope:
+            err(f"'{name}' is already declared, line {self.line}")
+        for i in range(self.scope):
+            if name in self.scope_list[i]:
+                warn(f"variable shadowing of '{name}', line {self.line}")
+        scope[name] = type
+
+    # Does not assign a value but checks if the variable is defined and that the
+    # type matches the original value.
+    def assign(self, name: str, type: Type):
+        scope = self.scope_list[self.scope]
+        if name not in scope:
+            err(f"'{name}' must be declared before assignment, line {self.line}")
+
+        prev = scope[name]
+        if prev != type:
+            err(f"mismatched types in assignment, expected {prev}, got {type}, line {self.line}")
+        scope[name] = type
+    
+    # Gets variable type from lookup. Iterates through scope list backwards
+    def get_var(self, name: str) -> Type:
+        i = self.scope
+        while i > -1:
+            scope = self.scope_list[i]
+            if name in scope:
+                return scope[name]
+            i -= 1
+        err(f"'{name}' is undefined, line {self.line}")
+
+    # Pushes into new scope
+    def push_scope(self):
+        self.scope += 1
+        self.scope_list.append({})
+    
+    # Pops scope
+    def pop_scope(self):
+        self.scope -= 1
+        self.scope_list.pop()
+
+
+    def scan_stmt_none(self):
+        pass
+
+    def scan_stmt_expr(self):
+        pass
+
+    def scan_stmt_declare(self):
+        pass
+
+    def scan_stmt_assign(self):
+        pass
+
+    def scan_stmt_func(self):
+        pass
+
+    def scan_stmt_print(self):
+        pass
+
+    def scan_stmt_block(self):
+        pass
+
+    def scan_stmt_return(self):
+        pass
+
+
+    def scan_expr_variable(self):
+        pass
+
+    def scan_expr_empty(self):
+        pass
+
+    def scan_expr_group(self):
+        pass
+
+    def scan_expr_args(self):
+        pass
+
+    def scan_expr_call(self):
+        pass
+
+    def scan_expr_unary(self):
+        pass
+
+    def scan_expr_array(self):
+        pass
+
+    def scan_expr_index(self):
+        pass
+
+    def scan_expr_binary(self):
+        pass
+
+    def scan_expr_literal(self):
+        pass
+
+    # Todo: extract all handlers to their respective functions
+
+    # Scans a single statement
     def scan_stmt(self, stmt: Statement):
         self.line = stmt.line
         t = stmt.type
@@ -138,54 +233,6 @@ class scanner:
 
         return Type(TYPE_NONE)
     
-    # Declare new variable to current scope, throws an error if already declared.
-    # Warns if a variable is being shadowed
-    def declare(self, name: str, type: Type):
-        if type == TYPE_FUNC and self.scope != 0:
-            err(f"functions can only be declared at top level, line {self.line}")
-        # Debug
-        # if type != TYPE_FUNC and self.scope == 0:
-        #     err(f"illegal statement at top level, line {self.line}")
-        scope = self.scope_list[self.scope]
-        if name in scope:
-            err(f"'{name}' is already declared, line {self.line}")
-        for i in range(self.scope):
-            if name in self.scope_list[i]:
-                warn(f"variable shadowing of '{name}', line {self.line}")
-        scope[name] = type
-
-    # Does not assign a value but checks if the variable is defined and that the
-    # type matches the original value.
-    def assign(self, name: str, type: Type):
-        scope = self.scope_list[self.scope]
-        if name not in scope:
-            err(f"'{name}' must be declared before assignment, line {self.line}")
-
-        prev = scope[name]
-        if prev != type:
-            err(f"mismatched types in assignment, expected {prev}, got {type}, line {self.line}")
-        scope[name] = type
-    
-    # Gets variable type from lookup. Iterates through scope list backwards
-    def get_var(self, name: str) -> Type:
-        i = self.scope
-        while i > -1:
-            scope = self.scope_list[i]
-            if name in scope:
-                return scope[name]
-            i -= 1
-        err(f"'{name}' is undefined, line {self.line}")
-
-    # Pushes into new scope
-    def push_scope(self):
-        self.scope += 1
-        self.scope_list.append({})
-    
-    # Pops scope
-    def pop_scope(self):
-        self.scope -= 1
-        self.scope_list.pop()
-
     # Matches two type kinds, raises error on mismatch
     # Todo: implement the remaining ops
     def check_binary_types(self, op: Token, left: Type, right: Type) -> Type:
@@ -217,22 +264,20 @@ class scanner:
             return Type(TYPE_INT)
 
         if right == TYPE_ARRAY or left == TYPE_ARRAY:
-            return self.check_array_types(left, right)
+            # Matches array and value types, raises error on mismatch
+            e = "new element does not match the array type; expected {}, got {}, line {}"
+            if right == TYPE_ARRAY and left != TYPE_ARRAY:
+                if right.sub_t != left: err(e.format(right.sub_t, left, self.line))
+                return right
+
+            if right != TYPE_ARRAY and left == TYPE_ARRAY:
+                if left.sub_t != right: err(e.format(left.sub_t, right, self.line))
+                return left
+
+            if left.sub_t != right.sub_t:
+                err(f"mismatched array types in expression; {left.sub_t} and {right.sub_t}, line {self.line}")
+            return left
 
         if left == right: return left
         err(f"mismatched types {left} and {right} in expression, line {self.line}")
 
-    # Matches array and value types, raises error on mismatch
-    def check_array_types(self, left: Type, right: Type) -> Type:
-        e = "new element does not match the array type; expected {}, got {}, line {}"
-        if right == TYPE_ARRAY and left != TYPE_ARRAY:
-            if right.sub_t != left: err(e.format(right.sub_t, left, self.line))
-            return right
-
-        if right != TYPE_ARRAY and left == TYPE_ARRAY:
-            if left.sub_t != right: err(e.format(left.sub_t, right, self.line))
-            return left
-
-        if left.sub_t != right.sub_t:
-            err(f"mismatched array types in expression; {left.sub_t} and {right.sub_t}, line {self.line}")
-        return left
