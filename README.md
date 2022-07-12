@@ -11,7 +11,7 @@
     <br />
     <a href="https://github.com/jesperkha/neon/blob/main/docs/lang.md">Documentation</a>
     •
-    <a href="https://github.com/jesperkha/Fizz/issues">Report issue</a>
+    <a href="https://github.com/jesperkha/neon/issues">Report issue</a>
     •
     <a href="https://github.com/jesperkha/neon/blob/main/changelog.md">Changelog</a>
   </p>
