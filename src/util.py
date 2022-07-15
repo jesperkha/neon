@@ -1,4 +1,8 @@
 from tokens import *
+import platform
+
+if platform.system() == "Windows":
+    os.system("color")
 
 DEBUG_MODE = False
 

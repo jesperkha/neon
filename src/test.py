@@ -60,7 +60,6 @@ def test_cases(prefix: str, cases: list):
 
 
 if __name__ == "__main__":
-    os.system("color")
     test_cases("expr", expr_cases)
     test_cases("stmt", stmt_cases)
     i = 1
