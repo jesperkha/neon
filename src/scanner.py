@@ -73,16 +73,23 @@ class scanner:
 
 
     def scan_stmt_none(self):
-        pass
+        err(f"invalid statement, line {self.line}")
 
     def scan_stmt_expr(self):
-        pass
+        self.eval_expr(stmt.expr)
 
     def scan_stmt_declare(self):
-        pass
+        expr_type = self.eval_expr(stmt.expr)
+        self.declare(stmt.name.lexeme, expr_type)
+        if stmt.vtype:
+            def_type = stmt.vtype
+            if expr_type != def_type:
+                err(f"mismatched types in assignment, expected {def_type}, got {expr_type}, line {self.line}")
+        else: # colon equal declaration
+            stmt.vtype = expr_type
 
     def scan_stmt_assign(self):
-        pass
+        self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr))
 
     def scan_stmt_func(self):
         pass
@@ -97,145 +104,66 @@ class scanner:
         pass
 
 
-    def scan_expr_variable(self):
+    def scan_expr_variable(self, expr: Expression) -> Type:
+        return self.get_var(expr.tokens[0].lexeme)
+
+    def scan_expr_empty(self, expr: Expression) -> Type:
+        return Type(TYPE_NONE)
+
+    def scan_expr_group(self, expr: Expression) -> Type:
+        return self.eval_expr(expr.inner)
+
+    def scan_expr_args(self, expr: Expression) -> Type:
+        # args is parsed manually by statements and expressions that use it
+        # other instances are errors
+        err(f"unexpected argument list, line {self.line}")
+
+    # Todo: scan call expression
+    def scan_expr_call(self, expr: Expression) -> Type:
         pass
 
-    def scan_expr_empty(self):
-        pass
-
-    def scan_expr_group(self):
-        pass
-
-    def scan_expr_args(self):
-        pass
-
-    def scan_expr_call(self):
-        pass
-
-    def scan_expr_unary(self):
-        pass
-
-    def scan_expr_array(self):
-        pass
-
-    def scan_expr_index(self):
-        pass
-
-    def scan_expr_binary(self):
-        pass
-
-    def scan_expr_literal(self):
-        pass
-
-    # Todo: extract all handlers to their respective functions
-
-    # Scans a single statement
-    def scan_stmt(self, stmt: Statement):
-        self.line = stmt.line
-        t = stmt.type
-
-        if t == STMT_NONE:
-            err(f"invalid statement, line {self.line}")
-        
-        elif t == STMT_EXPR:
-            self.eval_expr(stmt.expr)
-
-        elif t == STMT_DECLARE:
-            expr_type = self.eval_expr(stmt.expr)
-            self.declare(stmt.name.lexeme, expr_type)
-            if stmt.vtype:
-                def_type = stmt.vtype
-                if expr_type != def_type:
-                    err(f"mismatched types in assignment, expected {def_type}, got {expr_type}, line {self.line}")
-            else: # colon equal declaration
-                stmt.vtype = expr_type
-
-        elif t == STMT_ASSIGN:
-            self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr))
-        
-        else: # Debug
-            err(f"scanning for {t} is not implemented yet")
+    def scan_expr_unary(self, expr: Expression) -> Type:
+        right = self.eval_expr(expr.right)
+        op = expr.operator
+        if op.type in (MINUS, BIT_NEGATE):
+            if right.kind != KIND_NUMBER:
+                err(f"invalid operator '{op}' for type {right}, line {self.line}")
+            return right
+        if right.kind != KIND_BOOL:
+            err(f"invalid operator '{op}' for type {right}, line {self.line}")
+        return Type(TYPE_BOOL) # NOT operator
     
-    # Evaluates expression and checks for unmatched types, undefined variables etc
-    # Returns the expressions evaluated type
-    def eval_expr(self, expr: Expression) -> Type:
-        t = expr.type
-        if t == EXPR_VARIABLE:
-            return self.get_var(expr.tokens[0].lexeme)
-        
-        elif t == EXPR_EMPTY:
-            return Type(TYPE_NONE)
-        
-        elif t == EXPR_GROUP:
-            return self.eval_expr(expr.inner)
-
-        elif t == EXPR_LITERAL:
-            tok = expr.tokens[0]
-            if tok.type == STRING:
-                return Type(TYPE_STRING)
-            if tok.type == CHAR:
-                return Type(TYPE_CHAR)
-            if tok.type in (TRUE, FALSE):
-                return Type(TYPE_BOOL)
-            if tok.isfloat:
-                return Type(TYPE_FLOAT)
-            return Type(TYPE_INT)
-        
-        elif t == EXPR_ARRAY:
-            if expr.inner.type == EXPR_ARGS:
-                types = [self.eval_expr(typ) for typ in expr.inner.exprs]
-                inner_t = types[0]
-                for idx, t in enumerate(types):
-                    if t != inner_t:
-                        err(f"type of index {idx} did not match the first element in array literal; expected {inner_t}, got {t}, line {self.line}")
-                return Type(TYPE_ARRAY, sub_type=inner_t)
-
-            inner_t = self.eval_expr(expr.inner)
+    def scan_expr_array(self, expr: Expression) -> Type:
+        if expr.inner.type == EXPR_ARGS:
+            types = [self.eval_expr(typ) for typ in expr.inner.exprs]
+            inner_t = types[0]
+            for idx, t in enumerate(types):
+                if t != inner_t:
+                    err(f"type of index {idx} did not match the first element in array literal; expected {inner_t}, got {t}, line {self.line}")
             return Type(TYPE_ARRAY, sub_type=inner_t)
 
-        elif t == EXPR_UNARY:
-            right = self.eval_expr(expr.right)
-            op = expr.operator
-            if op.type in (MINUS, BIT_NEGATE):
-                if right.kind != KIND_NUMBER:
-                    err(f"invalid operator '{op}' for type {right}, line {self.line}")
-                return right
-            if right.kind != KIND_BOOL:
-                err(f"invalid operator '{op}' for type {right}, line {self.line}")
-            return Type(TYPE_BOOL) # NOT operator
+        inner_t = self.eval_expr(expr.inner)
+        return Type(TYPE_ARRAY, sub_type=inner_t)
+
+    def scan_expr_index(self, expr: Expression) -> Type:
+        arr = self.eval_expr(expr.array)
+        if arr != TYPE_ARRAY:
+            err(f"type {arr.type} is not indexable, line {self.line}")
+
+        index = self.eval_expr(expr.inner)
+        if index not in COLLECTION_UNSIGNED:
+            err(f"expected index to be integer, got {index}, line {self.line}")
+
+        # Todo: handle negative indexing
+        # Todo: check index out of range
+        return arr.sub_t
+
+    def scan_expr_binary(self, expr: Expression) -> Type:
+        left  = self.eval_expr(expr.left)
+        right = self.eval_expr(expr.right)
+        op = expr.operator
         
-        elif t == EXPR_BINARY:
-            left  = self.eval_expr(expr.left)
-            right = self.eval_expr(expr.right)
-            return self.check_binary_types(expr.operator, left, right)
-
-        # Todo: scan call expression
-        elif t == EXPR_CALL:
-            pass
-
-        elif t == EXPR_INDEX:
-            arr = self.eval_expr(expr.array)
-            if arr != TYPE_ARRAY:
-                err(f"type {arr.type} is not indexable, line {self.line}")
-
-            index = self.eval_expr(expr.inner)
-            if index not in COLLECTION_UNSIGNED:
-                err(f"expected index to be integer, got {index}, line {self.line}")
-
-            # Todo: handle negative indexing
-            # Todo: check index out of range
-            return arr.sub_t
-
-        elif t == EXPR_ARGS:
-            # args is parsed manually by statements and expressions that use it
-            # other instances are errors
-            err(f"unexpected argument list, line {self.line}")
-
-        return Type(TYPE_NONE)
-    
-    # Matches two type kinds, raises error on mismatch
-    # Todo: implement the remaining ops
-    def check_binary_types(self, op: Token, left: Type, right: Type) -> Type:
+        # Todo: implement the remaining ops
         if op.type == IN:
             if right != TYPE_ARRAY:
                 err(f"expected right expression to be array, got {right}, line {self.line}")
@@ -278,6 +206,28 @@ class scanner:
                 err(f"mismatched array types in expression; {left.sub_t} and {right.sub_t}, line {self.line}")
             return left
 
-        if left == right: return left
+        if left == right:
+            return left
         err(f"mismatched types {left} and {right} in expression, line {self.line}")
 
+    def scan_expr_literal(self, expr: Expression) -> Type:
+        tok = expr.tokens[0]
+        if tok.type == STRING:
+            return Type(TYPE_STRING)
+        if tok.type == CHAR:
+            return Type(TYPE_CHAR)
+        if tok.type in (TRUE, FALSE):
+            return Type(TYPE_BOOL)
+        if tok.isfloat:
+            return Type(TYPE_FLOAT)
+        return Type(TYPE_INT)
+    
+
+    # Scans a single statement
+    def scan_stmt(self, stmt: Statement):
+        pass
+    
+    # Evaluates expression and checks for unmatched types, undefined variables etc
+    # Returns the expressions evaluated type
+    def eval_expr(self, expr: Expression) -> Type:
+        pass
