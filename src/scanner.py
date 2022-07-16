@@ -71,6 +71,15 @@ class scanner:
         self.scope -= 1
         self.scope_list.pop()
 
+    # Scans a single statement
+    def scan_stmt(self, stmt: Statement):
+        pass
+    
+    # Evaluates expression and checks for unmatched types, undefined variables etc
+    # Returns the expressions evaluated type
+    def eval_expr(self, expr: Expression) -> Type:
+        pass
+
 
     def scan_stmt_none(self):
         err(f"invalid statement, line {self.line}")
@@ -158,6 +167,18 @@ class scanner:
         # Todo: check index out of range
         return arr.sub_t
 
+    def scan_expr_literal(self, expr: Expression) -> Type:
+        tok = expr.tokens[0]
+        if tok.type == STRING:
+            return Type(TYPE_STRING)
+        if tok.type == CHAR:
+            return Type(TYPE_CHAR)
+        if tok.type in (TRUE, FALSE):
+            return Type(TYPE_BOOL)
+        if tok.isfloat:
+            return Type(TYPE_FLOAT)
+        return Type(TYPE_INT)
+
     def scan_expr_binary(self, expr: Expression) -> Type:
         left  = self.eval_expr(expr.left)
         right = self.eval_expr(expr.right)
@@ -209,25 +230,3 @@ class scanner:
         if left == right:
             return left
         err(f"mismatched types {left} and {right} in expression, line {self.line}")
-
-    def scan_expr_literal(self, expr: Expression) -> Type:
-        tok = expr.tokens[0]
-        if tok.type == STRING:
-            return Type(TYPE_STRING)
-        if tok.type == CHAR:
-            return Type(TYPE_CHAR)
-        if tok.type in (TRUE, FALSE):
-            return Type(TYPE_BOOL)
-        if tok.isfloat:
-            return Type(TYPE_FLOAT)
-        return Type(TYPE_INT)
-    
-
-    # Scans a single statement
-    def scan_stmt(self, stmt: Statement):
-        pass
-    
-    # Evaluates expression and checks for unmatched types, undefined variables etc
-    # Returns the expressions evaluated type
-    def eval_expr(self, expr: Expression) -> Type:
-        pass
