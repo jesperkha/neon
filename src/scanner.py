@@ -36,7 +36,7 @@ class scanner:
             if stmt.type not in self.handlers:
                 util.err(f"unknown statement type: {stmt.type}")
                 
-            self.handlers[stmt.type]
+            self.handlers[stmt.type](stmt)
 
     # Declare new variable to current scope, throws an error if already declared.
     # Warns if a variable is being shadowed
@@ -87,13 +87,13 @@ class scanner:
         self.scope_list.pop()
 
 
-    def scan_stmt_none(self):
+    def scan_stmt_none(self, stmt: Statement):
         util.err(f"invalid statement, line {self.line}")
 
-    def scan_stmt_expr(self):
+    def scan_stmt_expr(self, stmt: Statement):
         eval_expr(stmt.expr, self.line)
 
-    def scan_stmt_declare(self):
+    def scan_stmt_declare(self, stmt: Statement):
         expr_type = eval_expr(stmt.expr, self.line)
         self.declare(stmt.name.lexeme, expr_type)
         if stmt.vtype:
@@ -103,25 +103,25 @@ class scanner:
         else: # colon equal declaration
             stmt.vtype = expr_type
 
-    def scan_stmt_assign(self):
+    def scan_stmt_assign(self, stmt: Statement):
         self.assign(stmt.name.lexeme, eval_expr(stmt.expr, self.line), self.line)
 
-    def scan_stmt_func(self):
+    def scan_stmt_func(self, stmt: Statement):
         pass
 
-    def scan_stmt_print(self):
+    def scan_stmt_print(self, stmt: Statement):
         pass
 
-    def scan_stmt_block(self):
+    def scan_stmt_block(self, stmt: Statement):
         pass
 
-    def scan_stmt_return(self):
+    def scan_stmt_return(self, stmt: Statement):
         pass
 
 
 # Evaluates an expression and returns the evaluated type and error (None)
 def eval_expr(expr: Expression, line: int) -> Type:
-    # Todo: figure out how to store/pass state
+    # Todo: (doing) figure out how to store/pass state
     if expr.type == EXPR_VARIABLE:
         return self.get_var(expr.tokens[0].lexeme)
 
