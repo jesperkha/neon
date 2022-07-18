@@ -18,11 +18,25 @@ class scanner:
         self.scope = 0
         self.scope_list = [{}]
 
+        self.handlers = {
+                STMT_EXPR: self.scan_stmt_expr,
+                STMT_ASSIGN: self.scan_stmt_assign,
+                STMT_BLOCK: self.scan_stmt_block,
+                STMT_DECLARE: self.scan_stmt_declare,
+                STMT_FUNC: self.scan_stmt_func,
+                STMT_NONE: self.scan_stmt_none,
+                STMT_PRINT: self.scan_stmt_print,
+                STMT_RETURN: self.scan_stmt_return,
+        }
+
     # Scans entire AST, returns nothing, raises error at first fault.
     # Todo: create map for statement/expression type to handler
     def scan(self):
         for stmt in self.ast:
-            self.scan_stmt(stmt)
+            if stmt.type not in self.handlers:
+                util.err(f"unknown statement type: {stmt.type}")
+                
+            self.handlers[stmt.type]
 
     # Declare new variable to current scope, throws an error if already declared.
     # Warns if a variable is being shadowed
@@ -72,10 +86,6 @@ class scanner:
         self.scope -= 1
         self.scope_list.pop()
 
-    # Scans a single statement
-    def scan_stmt(self, stmt: Statement):
-        if stmt.type == STMT_EXPR:
-            eval_expr(stmt.expr, self.line)
 
     def scan_stmt_none(self):
         util.err(f"invalid statement, line {self.line}")
