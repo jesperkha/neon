@@ -15,8 +15,8 @@ class Token:
         return self.lexeme
 
 class Type:
-    def __init__(self, type: str, complex: list = None, sub_type: str = None):
-        self.type = type
+    def __init__(self, typ: str, complex: list = None, sub_type: str = None):
+        self.type = typ
         self.sub_t = sub_type or TYPE_NONE
         self.set_kind()
 
@@ -43,17 +43,17 @@ class Type:
     def __eq__(self, o: object) -> bool:
         if type(o) == str: # allow checking for type constant
             return self.type == o
-        if o == None:
-            print("GOT NONE IN TYPE COMPARISON")
-            return False
         return self.str() == o.str()
+    
+    def __bool__(self) -> bool:
+        return self.type != TYPE_NONE
 
     def __str__(self) -> str:
         return self.str()
 
 class Expression:
-    def __init__(self, type: str, tokens: list, line: int):
-        self.type = type
+    def __init__(self, typ: str, tokens: list, line: int):
+        self.type = typ
         self.line = line
         self.tokens = tokens
         self.exprs:    list[Expression] = None
@@ -65,13 +65,13 @@ class Expression:
         self.operator: Token = None
 
 class Statement:
-    def __init__(self, type: str, line: int):
-        self.type  = type
+    def __init__(self, typ: str, line: int):
+        self.type  = typ
         self.line  = line
         self.expr: Expression = None
         self.block: Statement = None
         self.name: Token = None
-        self.vtype: Type = None
+        self.vtype: Type = Type(TYPE_NONE)
         self.stmts: list = []
         # list of tuple(name, Type)
         self.params: list = []

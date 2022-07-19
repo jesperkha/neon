@@ -5,6 +5,12 @@ from tokens import *
 def scan(ast: list[Statement]):
     scanner().scan(ast)
 
+class Function:
+    def __init__(self, name: str, return_t: Type, params: list):
+        self.name = name
+        self.return_t = return_t
+        self.params = params
+
 class scanner:
     def __init__(self):
         self.line = 0
@@ -17,6 +23,10 @@ class scanner:
         # higher scope. Pops the scope after exiting
         self.scope = 0
         self.scope_list = [{}]
+
+        # Global declarations
+        self.dec_funcs = {}
+        self.dec_structs = {}
 
         self.handlers = {
                 STMT_EXPR: self.scan_stmt_expr,
@@ -40,11 +50,11 @@ class scanner:
 
     # Declare new variable to current scope, throws an error if already declared.
     # Warns if a variable is being shadowed
-    def declare(self, name: str, type: Type):
-        if type == TYPE_FUNC and self.scope != 0:
+    def declare(self, name: str, typ: Type):
+        if typ == TYPE_FUNC and self.scope != 0:
             util.err(f"functions can only be declared at top level, line {self.line}")
         # Debug for testing
-        # if type != TYPE_FUNC and self.scope == 0:
+        # if typ != TYPE_FUNC and self.scope == 0:
         #    util.err(f"illegal statement at top level, line {self.line}")
         scope = self.scope_list[self.scope]
         if name in scope:
@@ -52,19 +62,19 @@ class scanner:
         for i in range(self.scope):
             if name in self.scope_list[i]:
                 warn(f"variable shadowing of '{name}', line {self.line}")
-        scope[name] = type
+        scope[name] = typ
 
     # Does not assign a value but checks if the variable is defined and that the
     # type matches the original value.
-    def assign(self, name: str, type: Type):
+    def assign(self, name: str, typ: Type):
         scope = self.scope_list[self.scope]
         if name not in scope:
             util.err(f"'{name}' must be declared before assignment, line {self.line}")
 
         prev = scope[name]
-        if prev != type:
+        if prev != typ:
             util.err(f"mismatched types in assignment, expected {prev}, got {type}, line {self.line}")
-        scope[name] = type
+        scope[name] = typ
     
     # Gets variable type from lookup. Iterates through scope list backwards
     def get_var(self, name: str) -> Type:
@@ -75,6 +85,13 @@ class scanner:
                 return scope[name]
             i -= 1
         util.err(f"'{name}' is undefined, line {self.line}")
+    
+    # Returns the param list from function definition
+    def get_func(self, name: str) -> list:
+        if name not in self.dec_funcs:
+            util.err(f"function '{name}' is not defined, line {self.line}")
+
+        return self.dec_funcs[name]
 
     # Pushes into new scope
     def push_scope(self):
@@ -97,7 +114,6 @@ class scanner:
         expr_type = self.eval_expr(stmt.expr)
         self.declare(stmt.name.lexeme, expr_type)
         if stmt.vtype:
-            # Todo: wtf is going on here??
             if expr_type != stmt.vtype:
                 util.err(f"mismatched types in assignment, expected {stmt.vtype}, got {expr_type}, line {self.line}")
         else: # colon equal declaration
@@ -107,11 +123,13 @@ class scanner:
         self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr))
 
     def scan_stmt_func(self, stmt: Statement):
+        func = Function(stmt.name.lexeme, stmt.vtype, stmt.params)
+        self.dec_funcs[stmt.name.lexeme] = func
         # Declare params to local scope
         self.push_scope()
-        self.return_type = stmt.vtype
+        self.return_type = func.return_t
         self.in_func = True
-        for name, typ in stmt.params:
+        for name, typ in func.params:
             self.declare(name.lexeme, typ)
 
         # Todo: check if function didnt return if given a return type.
@@ -149,9 +167,28 @@ class scanner:
             # other instances are errors
             util.err(f"unexpected argument list, line {self.line}")
 
-        # Todo: scan call expression
+        # Todo: hoist function calls
         elif expr.type == EXPR_CALL:
-            pass
+            func = self.get_func(expr.callee.lexeme)
+            args = expr.inner
+
+            arg_list = []
+            if args.type != EXPR_ARGS:
+                arg_list = [self.eval_expr(args)]
+            else:
+                for e in args.exprs:
+                    arg_list.append(self.eval_expr(e))
+
+            if len(arg_list) != len(func.params):
+                util.err(f"'{func.name}' takes {len(func.params)} arguments, got {len(arg_list)}, line {self.line}")
+
+            for idx, arg in enumerate(arg_list):
+                name, typ = func.params[idx]
+                if arg != typ:
+                    util.err(f"argument {idx+1} in '{func.name}' expects type {typ}, got {arg}, line {self.line}")
+
+            return func.return_t
+
 
         elif expr.type == EXPR_UNARY:
             right = self.eval_expr(expr.right)

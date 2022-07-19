@@ -264,7 +264,7 @@ class stmt_parser:
     def expect_type(self, must: bool = True) -> Type:
         if self.current().type != COLON:
             if not must:
-                return None
+                return Type(TYPE_NONE)
             err(f"expected colon before type, line {self.line}")
         stack = []
         last  = None
@@ -421,7 +421,8 @@ def parse_expression(tokens: list) -> Expression:
 
         call = Expression(EXPR_CALL, tokens, line)
         call.inner = parse_expression(tokens[begin_idx+1:len(tokens)-1])
-        call.callee = parse_expression(tokens[:begin_idx])
+        #call.callee = parse_expression(tokens[:begin_idx])
+        call.callee = tokens[0] # Debug
         return call
 
     # array index expression, ends with '[index]'
