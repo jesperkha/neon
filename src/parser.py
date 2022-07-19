@@ -139,10 +139,10 @@ class stmt_parser:
         elif typ == FUNC:
             self.expect_keyword(FUNC)
             stmt = Statement(STMT_FUNC, self.line)
-            stmt.name  = self.expect_identifier()
-            stmt.expr  = self.expect_args()
-            stmt.vtype = self.expect_type(False)
-            stmt.block = self.expect_block()
+            stmt.name   = self.expect_identifier()
+            stmt.params = self.expect_params()
+            stmt.vtype  = self.expect_type(False)
+            stmt.block  = self.expect_block()
             return stmt
 
         elif typ == IDENTIFIER:
@@ -150,6 +150,7 @@ class stmt_parser:
             end_idx = seek_token(self.tokens, NEWLINE, self.idx)
             if end_idx == -1:
                 end_idx = self.length
+
             line = self.tokens[self.idx:end_idx]
             if s := split(line, EQUAL):
                 # declaration or asignment (depending on type present)
@@ -165,6 +166,7 @@ class stmt_parser:
                     stmt.type = STMT_ASSIGN
                     return stmt
                 return stmt
+
             elif s := split(line, COLON_EQUAL):
                 # declaration without type
                 left = s[0]
@@ -198,8 +200,7 @@ class stmt_parser:
             if e: err(f"unexpected end of input, line {self.line}")
             return None
 
-        cur = self.tokens[self.idx]
-        self.line = cur.line # better error handling
+        cur = self.current()
         self.idx += 1
         return cur
     
@@ -234,18 +235,28 @@ class stmt_parser:
             err(f"expected identifier, got '{t.lexeme}', line {self.line}")
         return t
     
-    # Checks to see if the next tokens indicate an argument list. Raises
-    # error on fail. Consumes tokens. RETURNED EXPR CAN BE NON-ARGS TOO
-    def expect_args(self) -> Expression:
-        t = self.current()
+    # Parses function parameters into a list of tuple(name, Type).
+    # Returns said list on success (can be empty). Raises error for invalid params.
+    def expect_params(self) -> list:
+        t = self.advance()
         if t.type != LEFT_PAREN:
-            err(f"expected arg list, line {self.line}")
-        end_idx = seek(self.tokens, LEFT_PAREN, RIGHT_PAREN, self.idx)
-        if end_idx == -1:
-            err(f"expected right paren after arg list, line {self.line}")
-        interval = self.tokens[self.idx+1:end_idx]
-        self.idx = end_idx + 1
-        return parse_expression(interval)
+            err(f"expected '(' after function name, line {self.line}")
+        if self.current().type == RIGHT_PAREN:
+            self.advance()
+            return []
+
+        params = []
+        while True:
+            name = self.expect_identifier()
+            typ  = self.expect_type()
+            params.append((name, typ))
+            if self.current().type == RIGHT_PAREN:
+                break
+
+            self.expect_token(Token(COMMA, ",", self.line))
+    
+        self.advance() # skip closing paren
+        return params
 
     # Checks for type declaration (including colon). Raises error
     # on invalid type tokens. Consumes type if one is found. Returns
@@ -290,6 +301,12 @@ class stmt_parser:
         stmt = Statement(STMT_BLOCK, self.line)
         stmt.stmts = parse(interval)
         return stmt
+
+    # Checks to see if the next token matches. Raises error. Consumes token.
+    def expect_token(self, token: Token):
+        t = self.advance()
+        if t.type != token.type:
+            err(f"expected '{token.lexeme}', got '{t.lexeme}', line {self.line}")
 
 # Recursively parses token list into an expression tree
 def parse_expression(tokens: list) -> Expression:

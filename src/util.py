@@ -1,5 +1,5 @@
-from tokens import *
 import platform
+import tokens
 
 if platform.system() == "Windows":
     os.system("color")
@@ -30,7 +30,7 @@ def interupt(msg: str):
     print(f"{text_green('interupt')}: {msg}")
     exit()
 
-def debug(msg: str, tokens: list[Token] = None):
+def debug(msg: str, tokens: list[tokens.Token] = None):
     if not DEBUG_MODE:
         return
     print(f"{text_blue('debug')}: {msg}", end="")
@@ -42,10 +42,10 @@ def debug(msg: str, tokens: list[Token] = None):
     print()
 
 
-def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):
+def inspect_expr(expr: tokens.Expression, prefix: str = "", level: int = -1):
     "Pints out formatted expression"
     tabs = "\t" * level
-    if expr.type == EXPR_EMPTY:
+    if expr.type == tokens.EXPR_EMPTY:
         print(f"{tabs}EMPTY_EXPR")
         return
         
@@ -69,7 +69,7 @@ def inspect_expr(expr: Expression, prefix: str = "", level: int = -1):
             inspect_expr(e, f"{i}", level+1)
 
 
-def inspect_stmt(stmt: Statement, indent: int = 0):
+def inspect_stmt(stmt: tokens.Statement, indent: int = 0):
     tab = "\t" * indent
     print(f"""{tab}{stmt.type}\
 {'' if not stmt.name else f': {stmt.name.lexeme}'}\

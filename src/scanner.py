@@ -3,15 +3,15 @@ import util
 from tokens import *
 
 def scan(ast: list[Statement]):
-    scanner(ast).scan()
+    scanner().scan(ast)
 
 class scanner:
-    def __init__(self, ast: list[Statement]):
-        self.ast = ast
+    def __init__(self):
         self.line = 0
         # set after checking a function, used for
         # checking expression in returns
-        self.return_type = TYPE_NONE
+        self.return_type = Type(TYPE_NONE)
+        self.in_func = False
 
         # List of dicts to indicate scopes. Higher idx is
         # higher scope. Pops the scope after exiting
@@ -30,11 +30,12 @@ class scanner:
 
     # Scans entire AST, returns nothing, raises error at first fault.
     # Todo: create map for statement/expression type to handler
-    def scan(self):
-        for stmt in self.ast:
+    def scan(self, statements: list[Statement]):
+        for stmt in statements:
             if stmt.type not in self.handlers:
                 util.err(f"unknown statement type: {stmt.type}")
                 
+            self.line = stmt.line
             self.handlers[stmt.type](stmt)
 
     # Declare new variable to current scope, throws an error if already declared.
@@ -42,9 +43,9 @@ class scanner:
     def declare(self, name: str, type: Type):
         if type == TYPE_FUNC and self.scope != 0:
             util.err(f"functions can only be declared at top level, line {self.line}")
-        # Debug
+        # Debug for testing
         # if type != TYPE_FUNC and self.scope == 0:
-        #     util.err(f"illegal statement at top level, line {self.line}")
+        #    util.err(f"illegal statement at top level, line {self.line}")
         scope = self.scope_list[self.scope]
         if name in scope:
             util.err(f"'{name}' is already declared, line {self.line}")
@@ -90,34 +91,50 @@ class scanner:
         util.err(f"invalid statement, line {self.line}")
 
     def scan_stmt_expr(self, stmt: Statement):
-        self.eval_expr(stmt.expr, self.line)
+        self.eval_expr(stmt.expr)
 
     def scan_stmt_declare(self, stmt: Statement):
-        expr_type = self.eval_expr(stmt.expr, self.line)
+        expr_type = self.eval_expr(stmt.expr)
         self.declare(stmt.name.lexeme, expr_type)
         if stmt.vtype:
-            def_type = stmt.vtype
-            if expr_type != def_type:
-                util.err(f"mismatched types in assignment, expected {def_type}, got {expr_type}, line {self.line}")
+            # Todo: wtf is going on here??
+            if expr_type != stmt.vtype:
+                util.err(f"mismatched types in assignment, expected {stmt.vtype}, got {expr_type}, line {self.line}")
         else: # colon equal declaration
             stmt.vtype = expr_type
 
     def scan_stmt_assign(self, stmt: Statement):
-        self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr, self.line), self.line)
+        self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr))
 
     def scan_stmt_func(self, stmt: Statement):
-        pass
+        # Declare params to local scope
+        self.push_scope()
+        self.return_type = stmt.vtype
+        self.in_func = True
+        for name, typ in stmt.params:
+            self.declare(name.lexeme, typ)
+
+        # Todo: check if function didnt return if given a return type.
+        # or if it did even though it does not return anything
+        self.scan(stmt.block.stmts)
+        self.in_func = False
+        self.pop_scope()
 
     def scan_stmt_block(self, stmt: Statement):
-        pass
+        self.push_scope()
+        self.scan(stmt.stmts)
+        self.pop_scope()
 
     def scan_stmt_return(self, stmt: Statement):
-        pass
+        if not self.in_func:
+            err(f"illegal return outside of function, line {self.line}")
+        returned = self.eval_expr(stmt.expr)
+        if returned != self.return_type:
+            util.err(f"mismatched type in return, expected {self.return_type}, got {returned}, line {self.line}")
 
 
     # Evaluates an expression and returns the evaluated type and error (None)
-    def eval_expr(self, expr: Expression, line: int) -> Type:
-        # Todo: (doing) figure out how to store/pass state
+    def eval_expr(self, expr: Expression) -> Type:
         if expr.type == EXPR_VARIABLE:
             return self.get_var(expr.tokens[0].lexeme)
 
@@ -125,48 +142,48 @@ class scanner:
             return Type(TYPE_NONE)
 
         elif expr.type == EXPR_GROUP:
-            return self.eval_expr(expr.inner, line)
+            return self.eval_expr(expr.inner)
 
         elif expr.type == EXPR_ARGS:
             # args is parsed manually by statements and expressions that use it
             # other instances are errors
-            util.err(f"unexpected argument list, line {line}")
+            util.err(f"unexpected argument list, line {self.line}")
 
         # Todo: scan call expression
         elif expr.type == EXPR_CALL:
             pass
 
         elif expr.type == EXPR_UNARY:
-            right = self.eval_expr(expr.right, line)
+            right = self.eval_expr(expr.right)
             op = expr.operator
             if op.type in (MINUS, BIT_NEGATE):
                 if right.kind != KIND_NUMBER:
-                    util.err(f"invalid operator '{op}' for type {right}, line {line}")
+                    util.err(f"invalid operator '{op}' for type {right}, line {self.line}")
                 return right
             if right.kind != KIND_BOOL:
-                util.err(f"invalid operator '{op}' for type {right}, line {line}")
+                util.err(f"invalid operator '{op}' for type {right}, line {self.line}")
             return Type(TYPE_BOOL) # NOT operator
 
         elif expr.type == EXPR_ARRAY:
             if expr.inner.type == EXPR_ARGS:
-                types = [self.eval_expr(typ, line) for typ in expr.inner.exprs]
+                types = [self.eval_expr(typ) for typ in expr.inner.exprs]
                 inner_t = types[0]
                 for idx, t in enumerate(types):
                     if t != inner_t:
-                        util.err(f"type of index {idx} did not match the first element in array literal; expected {inner_t}, got {t}, line {line}")
+                        util.err(f"type of index {idx} did not match the first element in array literal; expected {inner_t}, got {t}, line {self.line}")
                 return Type(TYPE_ARRAY, sub_type=inner_t)
 
-            inner_t = self.eval_expr(expr.inner, line)
+            inner_t = self.eval_expr(expr.inner)
             return Type(TYPE_ARRAY, sub_type=inner_t)
 
         elif expr.type == EXPR_INDEX:
-            arr = self.eval_expr(expr.array, line)
+            arr = self.eval_expr(expr.array)
             if arr != TYPE_ARRAY:
-                util.err(f"type {arr.type} is not indexable, line {line}")
+                util.err(f"type {arr.type} is not indexable, line {self.line}")
 
-            index = self.eval_expr(expr.inner, line)
+            index = self.eval_expr(expr.inner)
             if index not in COLLECTION_UNSIGNED:
-                util.err(f"expected index to be integer, got {index}, line {line}")
+                util.err(f"expected index to be integer, got {index}, line {self.line}")
 
             # Todo: handle negative indexing
             # Todo: check index out of range
@@ -185,27 +202,27 @@ class scanner:
             return Type(TYPE_INT)
 
         elif expr.type == EXPR_BINARY:
-            left  = self.eval_expr(expr.left, line)
-            right = self.eval_expr(expr.right, line)
+            left  = self.eval_expr(expr.left)
+            right = self.eval_expr(expr.right)
             op = expr.operator
             
             # Todo: implement the remaining ops
             if op.type == IN:
                 if right != TYPE_ARRAY:
-                    util.err(f"expected right expression to be array, got {right}, line {line}")
+                    util.err(f"expected right expression to be array, got {right}, line {self.line}")
                 if left != right.sub_t:
-                    util.err(f"left expression did not match array type; expected {right.sub_t}, got {left}, line {line}") 
+                    util.err(f"left expression did not match array type; expected {right.sub_t}, got {left}, line {self.line}") 
                 return Type(TYPE_BOOL)
 
             for n in (left, right): # check operator
                 if op.type not in binary_op_combos[n.kind]:
-                    util.err(f"invalid operator '{op}' for type {n}, line {line}")
+                    util.err(f"invalid operator '{op}' for type {n}, line {self.line}")
 
             if op.type in (BIT_OR, BIT_XOR, BIT_AND, BIT_LSHIFT, BIT_RSHIFT):
                 if op.type in (BIT_LSHIFT, BIT_RSHIFT):
                     # check if right is unsigned int
                     if right.type not in COLLECTION_UNSIGNED:
-                        util.err(f"expected unsigned int in shift expression, got {right}, line {line}")
+                        util.err(f"expected unsigned int in shift expression, got {right}, line {self.line}")
                     return left
                 
                 # Todo: check for bit length of number
@@ -214,7 +231,7 @@ class scanner:
 
             if op.type == MODULO:
                 if right.type not in COLLECTION_UNSIGNED:
-                    util.err(f"expected unsigned int in modulo expression, got {right}, line {line}")
+                    util.err(f"expected unsigned int in modulo expression, got {right}, line {self.line}")
                 return Type(TYPE_INT)
 
             if right == TYPE_ARRAY or left == TYPE_ARRAY:
@@ -222,19 +239,19 @@ class scanner:
                 e = "new element does not match the array type; expected {}, got {}, line {}"
                 if right == TYPE_ARRAY and left != TYPE_ARRAY:
                     if right.sub_t != left:
-                        util.err(e.format(right.sub_t, left, line))
+                        util.err(e.format(right.sub_t, left, self.line))
                     return right
 
                 if right != TYPE_ARRAY and left == TYPE_ARRAY:
                     if left.sub_t != right:
-                        util.err(e.format(left.sub_t, right, line))
+                        util.err(e.format(left.sub_t, right, self.line))
                     return left
 
                 if left.sub_t != right.sub_t:
-                    util.err(f"mismatched array types in expression; {left.sub_t} and {right.sub_t}, line {line}")
+                    util.err(f"mismatched array types in expression; {left.sub_t} and {right.sub_t}, line {self.line}")
                 return left
 
             if left == right:
                 return left
 
-            util.err(f"mismatched types {left} and {right} in expression, line {line}")
+            util.err(f"mismatched types {left} and {right} in expression, line {self.line}")

@@ -43,6 +43,9 @@ class Type:
     def __eq__(self, o: object) -> bool:
         if type(o) == str: # allow checking for type constant
             return self.type == o
+        if o == None:
+            print("GOT NONE IN TYPE COMPARISON")
+            return False
         return self.str() == o.str()
 
     def __str__(self) -> str:
@@ -70,6 +73,8 @@ class Statement:
         self.name: Token = None
         self.vtype: Type = None
         self.stmts: list = []
+        # list of tuple(name, Type)
+        self.params: list = []
 
 _i = 0
 def i():
