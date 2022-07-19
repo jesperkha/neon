@@ -104,7 +104,6 @@ RIGHT_SQUARE  = i()
 
 RETURN        = i()
 FUNC          = i()
-PRINT         = i()
 
 # Binary expression tokens in order of precedency
 AND           = i()
@@ -185,7 +184,6 @@ COLLECTION_UNSIGNED = (TYPE_INT, TYPE_U8, TYPE_U16, TYPE_U32, TYPE_U64)
 keyword_lookup = {
     "return": RETURN,
     "func":   FUNC,
-    "print":  PRINT,
     "true":   TRUE,
     "false":  FALSE,
     "in":     IN,

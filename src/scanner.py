@@ -25,7 +25,6 @@ class scanner:
                 STMT_DECLARE: self.scan_stmt_declare,
                 STMT_FUNC: self.scan_stmt_func,
                 STMT_NONE: self.scan_stmt_none,
-                STMT_PRINT: self.scan_stmt_print,
                 STMT_RETURN: self.scan_stmt_return,
         }
 
@@ -91,10 +90,10 @@ class scanner:
         util.err(f"invalid statement, line {self.line}")
 
     def scan_stmt_expr(self, stmt: Statement):
-        eval_expr(stmt.expr, self.line)
+        self.eval_expr(stmt.expr, self.line)
 
     def scan_stmt_declare(self, stmt: Statement):
-        expr_type = eval_expr(stmt.expr, self.line)
+        expr_type = self.eval_expr(stmt.expr, self.line)
         self.declare(stmt.name.lexeme, expr_type)
         if stmt.vtype:
             def_type = stmt.vtype
@@ -104,12 +103,9 @@ class scanner:
             stmt.vtype = expr_type
 
     def scan_stmt_assign(self, stmt: Statement):
-        self.assign(stmt.name.lexeme, eval_expr(stmt.expr, self.line), self.line)
+        self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr, self.line), self.line)
 
     def scan_stmt_func(self, stmt: Statement):
-        pass
-
-    def scan_stmt_print(self, stmt: Statement):
         pass
 
     def scan_stmt_block(self, stmt: Statement):
@@ -119,126 +115,126 @@ class scanner:
         pass
 
 
-# Evaluates an expression and returns the evaluated type and error (None)
-def eval_expr(expr: Expression, line: int) -> Type:
-    # Todo: (doing) figure out how to store/pass state
-    if expr.type == EXPR_VARIABLE:
-        return self.get_var(expr.tokens[0].lexeme)
+    # Evaluates an expression and returns the evaluated type and error (None)
+    def eval_expr(self, expr: Expression, line: int) -> Type:
+        # Todo: (doing) figure out how to store/pass state
+        if expr.type == EXPR_VARIABLE:
+            return self.get_var(expr.tokens[0].lexeme)
 
-    elif expr.type == EXPR_EMPTY:
-        return Type(TYPE_NONE)
+        elif expr.type == EXPR_EMPTY:
+            return Type(TYPE_NONE)
 
-    elif expr.type == EXPR_GROUP:
-        return eval_expr(expr.inner, line)
+        elif expr.type == EXPR_GROUP:
+            return self.eval_expr(expr.inner, line)
 
-    elif expr.type == EXPR_ARGS:
-        # args is parsed manually by statements and expressions that use it
-        # other instances are errors
-        util.err(f"unexpected argument list, line {line}")
+        elif expr.type == EXPR_ARGS:
+            # args is parsed manually by statements and expressions that use it
+            # other instances are errors
+            util.err(f"unexpected argument list, line {line}")
 
-    # Todo: scan call expression
-    elif expr.type == EXPR_CALL:
-        pass
+        # Todo: scan call expression
+        elif expr.type == EXPR_CALL:
+            pass
 
-    elif expr.type == EXPR_UNARY:
-        right = eval_expr(expr.right, line)
-        op = expr.operator
-        if op.type in (MINUS, BIT_NEGATE):
-            if right.kind != KIND_NUMBER:
+        elif expr.type == EXPR_UNARY:
+            right = self.eval_expr(expr.right, line)
+            op = expr.operator
+            if op.type in (MINUS, BIT_NEGATE):
+                if right.kind != KIND_NUMBER:
+                    util.err(f"invalid operator '{op}' for type {right}, line {line}")
+                return right
+            if right.kind != KIND_BOOL:
                 util.err(f"invalid operator '{op}' for type {right}, line {line}")
-            return right
-        if right.kind != KIND_BOOL:
-            util.err(f"invalid operator '{op}' for type {right}, line {line}")
-        return Type(TYPE_BOOL) # NOT operator
+            return Type(TYPE_BOOL) # NOT operator
 
-    elif expr.type == EXPR_ARRAY:
-        if expr.inner.type == EXPR_ARGS:
-            types = [eval_expr(typ, line) for typ in expr.inner.exprs]
-            inner_t = types[0]
-            for idx, t in enumerate(types):
-                if t != inner_t:
-                    util.err(f"type of index {idx} did not match the first element in array literal; expected {inner_t}, got {t}, line {line}")
+        elif expr.type == EXPR_ARRAY:
+            if expr.inner.type == EXPR_ARGS:
+                types = [self.eval_expr(typ, line) for typ in expr.inner.exprs]
+                inner_t = types[0]
+                for idx, t in enumerate(types):
+                    if t != inner_t:
+                        util.err(f"type of index {idx} did not match the first element in array literal; expected {inner_t}, got {t}, line {line}")
+                return Type(TYPE_ARRAY, sub_type=inner_t)
+
+            inner_t = self.eval_expr(expr.inner, line)
             return Type(TYPE_ARRAY, sub_type=inner_t)
 
-        inner_t = eval_expr(expr.inner, line)
-        return Type(TYPE_ARRAY, sub_type=inner_t)
+        elif expr.type == EXPR_INDEX:
+            arr = self.eval_expr(expr.array, line)
+            if arr != TYPE_ARRAY:
+                util.err(f"type {arr.type} is not indexable, line {line}")
 
-    elif expr.type == EXPR_INDEX:
-        arr = eval_expr(expr.array, line)
-        if arr != TYPE_ARRAY:
-            util.err(f"type {arr.type} is not indexable, line {line}")
+            index = self.eval_expr(expr.inner, line)
+            if index not in COLLECTION_UNSIGNED:
+                util.err(f"expected index to be integer, got {index}, line {line}")
 
-        index = eval_expr(expr.inner, line)
-        if index not in COLLECTION_UNSIGNED:
-            util.err(f"expected index to be integer, got {index}, line {line}")
+            # Todo: handle negative indexing
+            # Todo: check index out of range
+            return arr.sub_t
 
-        # Todo: handle negative indexing
-        # Todo: check index out of range
-        return arr.sub_t
-
-    elif expr.type == EXPR_LITERAL:
-        tok = expr.tokens[0]
-        if tok.type == STRING:
-            return Type(TYPE_STRING)
-        if tok.type == CHAR:
-            return Type(TYPE_CHAR)
-        if tok.type in (TRUE, FALSE):
-            return Type(TYPE_BOOL)
-        if tok.isfloat:
-            return Type(TYPE_FLOAT)
-        return Type(TYPE_INT)
-
-    elif expr.type == EXPR_BINARY:
-        left  = eval_expr(expr.left, line)
-        right = eval_expr(expr.right, line)
-        op = expr.operator
-        
-        # Todo: implement the remaining ops
-        if op.type == IN:
-            if right != TYPE_ARRAY:
-                util.err(f"expected right expression to be array, got {right}, line {line}")
-            if left != right.sub_t:
-                util.err(f"left expression did not match array type; expected {right.sub_t}, got {left}, line {line}") 
-            return Type(TYPE_BOOL)
-
-        for n in (left, right): # check operator
-            if op.type not in binary_op_combos[n.kind]:
-                util.err(f"invalid operator '{op}' for type {n}, line {line}")
-
-        if op.type in (BIT_OR, BIT_XOR, BIT_AND, BIT_LSHIFT, BIT_RSHIFT):
-            if op.type in (BIT_LSHIFT, BIT_RSHIFT):
-                # check if right is unsigned int
-                if right.type not in COLLECTION_UNSIGNED:
-                    util.err(f"expected unsigned int in shift expression, got {right}, line {line}")
-                return left
-            
-            # Todo: check for bit length of number
-            # Todo: add runtime err for negative numbers
-            return left
-
-        if op.type == MODULO:
-            if right.type not in COLLECTION_UNSIGNED:
-                util.err(f"expected unsigned int in modulo expression, got {right}, line {line}")
+        elif expr.type == EXPR_LITERAL:
+            tok = expr.tokens[0]
+            if tok.type == STRING:
+                return Type(TYPE_STRING)
+            if tok.type == CHAR:
+                return Type(TYPE_CHAR)
+            if tok.type in (TRUE, FALSE):
+                return Type(TYPE_BOOL)
+            if tok.isfloat:
+                return Type(TYPE_FLOAT)
             return Type(TYPE_INT)
 
-        if right == TYPE_ARRAY or left == TYPE_ARRAY:
-            # Matches array and value types, raises error on mismatch
-            e = "new element does not match the array type; expected {}, got {}, line {}"
-            if right == TYPE_ARRAY and left != TYPE_ARRAY:
-                if right.sub_t != left:
-                    util.err(e.format(right.sub_t, left, line))
-                return right
+        elif expr.type == EXPR_BINARY:
+            left  = self.eval_expr(expr.left, line)
+            right = self.eval_expr(expr.right, line)
+            op = expr.operator
+            
+            # Todo: implement the remaining ops
+            if op.type == IN:
+                if right != TYPE_ARRAY:
+                    util.err(f"expected right expression to be array, got {right}, line {line}")
+                if left != right.sub_t:
+                    util.err(f"left expression did not match array type; expected {right.sub_t}, got {left}, line {line}") 
+                return Type(TYPE_BOOL)
 
-            if right != TYPE_ARRAY and left == TYPE_ARRAY:
-                if left.sub_t != right:
-                    util.err(e.format(left.sub_t, right, line))
+            for n in (left, right): # check operator
+                if op.type not in binary_op_combos[n.kind]:
+                    util.err(f"invalid operator '{op}' for type {n}, line {line}")
+
+            if op.type in (BIT_OR, BIT_XOR, BIT_AND, BIT_LSHIFT, BIT_RSHIFT):
+                if op.type in (BIT_LSHIFT, BIT_RSHIFT):
+                    # check if right is unsigned int
+                    if right.type not in COLLECTION_UNSIGNED:
+                        util.err(f"expected unsigned int in shift expression, got {right}, line {line}")
+                    return left
+                
+                # Todo: check for bit length of number
+                # Todo: add runtime err for negative numbers
                 return left
 
-            if left.sub_t != right.sub_t:
-                util.err(f"mismatched array types in expression; {left.sub_t} and {right.sub_t}, line {line}")
-            return left
+            if op.type == MODULO:
+                if right.type not in COLLECTION_UNSIGNED:
+                    util.err(f"expected unsigned int in modulo expression, got {right}, line {line}")
+                return Type(TYPE_INT)
 
-        if left == right:
-            return left
+            if right == TYPE_ARRAY or left == TYPE_ARRAY:
+                # Matches array and value types, raises error on mismatch
+                e = "new element does not match the array type; expected {}, got {}, line {}"
+                if right == TYPE_ARRAY and left != TYPE_ARRAY:
+                    if right.sub_t != left:
+                        util.err(e.format(right.sub_t, left, line))
+                    return right
 
-        util.err(f"mismatched types {left} and {right} in expression, line {line}")
+                if right != TYPE_ARRAY and left == TYPE_ARRAY:
+                    if left.sub_t != right:
+                        util.err(e.format(left.sub_t, right, line))
+                    return left
+
+                if left.sub_t != right.sub_t:
+                    util.err(f"mismatched array types in expression; {left.sub_t} and {right.sub_t}, line {line}")
+                return left
+
+            if left == right:
+                return left
+
+            util.err(f"mismatched types {left} and {right} in expression, line {line}")
