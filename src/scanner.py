@@ -6,11 +6,13 @@ def scan(ast: list[Statement]):
     scanner().scan(ast)
 
 class Function:
-    def __init__(self, name: str, return_t: Type, params: list):
+    def __init__(self, name: str, return_t: Type, params: list, body: list[Statement]):
         self.name = name
         self.return_t = return_t
         self.params = params
+        self.body = body
 
+# Todo: validate types (check if defined)
 class scanner:
     def __init__(self):
         self.line = 0
@@ -42,14 +44,23 @@ class scanner:
         }
 
     # Scans entire AST, returns nothing, raises error at first fault.
-    # Todo: create map for statement/expression type to handler
     def scan(self, statements: list[Statement]):
         for stmt in statements:
+            self.line = stmt.line
             if stmt.type not in self.handlers:
                 util.err(f"unknown statement type: {stmt.type}")
+
+            top_level = (STMT_FUNC)
+            if stmt.type in top_level and self.scope != 0:
+                util.err(f"{stmt.type.lower()}s can only be declared at top level, line {self.line}")
+            # Debug: allow top level variables for testing
+            if stmt.type not in top_level and self.scope == 0:
+               util.err(f"illegal statement at top level, line {self.line}")
                 
-            self.line = stmt.line
             self.handlers[stmt.type](stmt)
+
+        for _, f in self.dec_funcs.items():
+            self.scan_function_body(f)
 
     # Converts mathing type kinds to base type, does checks on validity of
     # assignment. Returns new type if converted.
@@ -59,11 +70,6 @@ class scanner:
             util.err(f"keywords cannot be used as variable names, line {self.line}")
         if not typ:
             util.err(f"cannot assign null to a variable, line {self.line}")
-        if typ == TYPE_FUNC and self.scope != 0:
-            util.err(f"functions can only be declared at top level, line {self.line}")
-        # Debug: allow top level variables for testing
-        # if typ != TYPE_FUNC and self.scope == 0:
-        #    util.err(f"illegal statement at top level, line {self.line}")
 
         return typ
 
@@ -143,9 +149,10 @@ class scanner:
         self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr))
 
     def scan_stmt_func(self, stmt: Statement):
-        func = Function(stmt.name.lexeme, stmt.vtype, stmt.params)
+        func = Function(stmt.name.lexeme, stmt.vtype, stmt.params, stmt.block.stmts)
         self.dec_funcs[stmt.name.lexeme] = func
 
+    def scan_function_body(self, func: Function):
         # Declare params to local scope
         self.push_scope()
         self.return_type = func.return_t
@@ -153,11 +160,10 @@ class scanner:
         for name, typ in func.params:
             self.declare(name.lexeme, typ)
 
-        # Todo: (doing) check if function didnt return if given a return type.
-        # or if it did even though it does not return anything
+        # Check if function has returned if it should
         self.returned = -1
         func_scope = self.scope
-        self.scan(stmt.block.stmts)
+        self.scan(func.body)
         if self.returned != func_scope and func.return_t:
             util.err(f"missing return in function '{func.name}', line {self.line}")
 
@@ -172,8 +178,6 @@ class scanner:
     def scan_stmt_return(self, stmt: Statement):
         if not self.in_func:
             util.err(f"illegal return outside of function, line {self.line}")
-        #if not self.return_type and stmt.expr.type != EXPR_EMPTY:
-        #    util.err(f"cannot return value from function without return type, line {self.line}")
         returned = self.eval_expr(stmt.expr)
         if returned != self.return_type:
             util.err(f"mismatched type in return, expected {self.return_type}, got {returned}, line {self.line}")
