@@ -202,9 +202,9 @@ class scanner:
             args = expr.inner
 
             arg_list = []
-            if args.type != EXPR_ARGS:
+            if args.type not in (EXPR_ARGS, EXPR_EMPTY):
                 arg_list = [self.eval_expr(args)]
-            else:
+            elif args.type != EXPR_EMPTY:
                 for e in args.exprs:
                     arg_list.append(self.eval_expr(e))
 
