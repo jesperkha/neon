@@ -17,6 +17,9 @@ class scanner:
         # set after checking a function, used for
         # checking expression in returns
         self.return_type = Type(TYPE_NONE)
+        # -1 if false, other number for the scope. the
+        # scope must be the same as the function
+        self.returned = -1
         self.in_func = False
 
         # List of dicts to indicate scopes. Higher idx is
@@ -48,33 +51,50 @@ class scanner:
             self.line = stmt.line
             self.handlers[stmt.type](stmt)
 
+    # Converts mathing type kinds to base type, does checks on validity of
+    # assignment. Returns new type if converted.
+    def validate_assignment(self, name: str, typ: Type) -> Type:
+        # Declaration errors
+        if name in keyword_lookup or name in typeword_lookup:
+            util.err(f"keywords cannot be used as variable names, line {self.line}")
+        if not typ:
+            util.err(f"cannot assign null to a variable, line {self.line}")
+        if typ == TYPE_FUNC and self.scope != 0:
+            util.err(f"functions can only be declared at top level, line {self.line}")
+        # Debug: allow top level variables for testing
+        # if typ != TYPE_FUNC and self.scope == 0:
+        #    util.err(f"illegal statement at top level, line {self.line}")
+
+        return typ
+
     # Declare new variable to current scope, throws an error if already declared.
     # Warns if a variable is being shadowed
     def declare(self, name: str, typ: Type):
-        if typ == TYPE_FUNC and self.scope != 0:
-            util.err(f"functions can only be declared at top level, line {self.line}")
-        # Debug for testing
-        # if typ != TYPE_FUNC and self.scope == 0:
-        #    util.err(f"illegal statement at top level, line {self.line}")
         scope = self.scope_list[self.scope]
         if name in scope:
             util.err(f"'{name}' is already declared, line {self.line}")
         for i in range(self.scope):
             if name in self.scope_list[i]:
                 warn(f"variable shadowing of '{name}', line {self.line}")
-        scope[name] = typ
+
+        scope[name] = self.validate_assignment(name, typ)
 
     # Does not assign a value but checks if the variable is defined and that the
     # type matches the original value.
     def assign(self, name: str, typ: Type):
-        scope = self.scope_list[self.scope]
-        if name not in scope:
-            util.err(f"'{name}' must be declared before assignment, line {self.line}")
+        typ = self.validate_assignment(name, typ)
+        i = self.scope
+        while i > -1:
+            scope = self.scope_list[i]
+            if name in scope:
+                prev = scope[name]
+                if prev != typ:
+                    util.err(f"mismatched types in assignment, expected {prev}, got {typ}, line {self.line}")
+                scope[name] = typ
+                return
+            i -= 1
 
-        prev = scope[name]
-        if prev != typ:
-            util.err(f"mismatched types in assignment, expected {prev}, got {type}, line {self.line}")
-        scope[name] = typ
+        util.err(f"'{name}' must be declared before assignment, line {self.line}")
     
     # Gets variable type from lookup. Iterates through scope list backwards
     def get_var(self, name: str) -> Type:
@@ -125,6 +145,7 @@ class scanner:
     def scan_stmt_func(self, stmt: Statement):
         func = Function(stmt.name.lexeme, stmt.vtype, stmt.params)
         self.dec_funcs[stmt.name.lexeme] = func
+
         # Declare params to local scope
         self.push_scope()
         self.return_type = func.return_t
@@ -132,9 +153,14 @@ class scanner:
         for name, typ in func.params:
             self.declare(name.lexeme, typ)
 
-        # Todo: check if function didnt return if given a return type.
+        # Todo: (doing) check if function didnt return if given a return type.
         # or if it did even though it does not return anything
+        self.returned = -1
+        func_scope = self.scope
         self.scan(stmt.block.stmts)
+        if self.returned != func_scope and func.return_t:
+            util.err(f"missing return in function '{func.name}', line {self.line}")
+
         self.in_func = False
         self.pop_scope()
 
@@ -145,11 +171,14 @@ class scanner:
 
     def scan_stmt_return(self, stmt: Statement):
         if not self.in_func:
-            err(f"illegal return outside of function, line {self.line}")
+            util.err(f"illegal return outside of function, line {self.line}")
+        #if not self.return_type and stmt.expr.type != EXPR_EMPTY:
+        #    util.err(f"cannot return value from function without return type, line {self.line}")
         returned = self.eval_expr(stmt.expr)
         if returned != self.return_type:
             util.err(f"mismatched type in return, expected {self.return_type}, got {returned}, line {self.line}")
 
+        self.returned = self.scope
 
     # Evaluates an expression and returns the evaluated type and error (None)
     def eval_expr(self, expr: Expression) -> Type:

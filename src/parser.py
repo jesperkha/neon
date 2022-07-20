@@ -421,8 +421,9 @@ def parse_expression(tokens: list) -> Expression:
 
         call = Expression(EXPR_CALL, tokens, line)
         call.inner = parse_expression(tokens[begin_idx+1:len(tokens)-1])
-        #call.callee = parse_expression(tokens[:begin_idx])
-        call.callee = tokens[0] # Debug
+        # Debug: using first token as function name
+        # call.callee = parse_expression(tokens[:begin_idx])
+        call.callee = tokens[0]
         return call
 
     # array index expression, ends with '[index]'
