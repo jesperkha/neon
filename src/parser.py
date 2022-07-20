@@ -324,7 +324,7 @@ def parse_expression(tokens: list) -> Expression:
     # a single token list can only be a literal value
     if len(tokens) == 1:
         debug(f"single token", tokens)
-        if first in (STRING, NUMBER, TRUE, FALSE):
+        if first in (STRING, CHAR, NUMBER, TRUE, FALSE):
             return Expression(EXPR_LITERAL, tokens, line)
         elif first == IDENTIFIER:
             return Expression(EXPR_VARIABLE, tokens, line)

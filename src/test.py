@@ -14,6 +14,8 @@ def errorif(fail: bool, msg: str):
 
 expr_cases = [
     ["1", tokens.EXPR_LITERAL],
+    ["'a'", tokens.EXPR_LITERAL],
+    ['"a"', tokens.EXPR_LITERAL],
     ["a", tokens.EXPR_VARIABLE],
     ["(a)", tokens.EXPR_GROUP],
     ["[a, b]", tokens.EXPR_ARRAY],

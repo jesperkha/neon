@@ -30,13 +30,15 @@ def tokenize(source: str) -> list[Token]:
             continue
 
         # strings
-        if char == '"':
-            string = '"'
+        string_c = ("'", '"')
+        if char in string_c:
+            string  = char
+            start_c = char
             idx += 1 # skip starting quote
             terminated = False
             while idx < len(source):
                 c = source[idx]
-                if c != '"':
+                if c != start_c:
                     string += c
                 else:
                     terminated = True
@@ -46,8 +48,15 @@ def tokenize(source: str) -> list[Token]:
             if not terminated:
                 err(f"unterminated string, line {line}")
 
-            string += '"'
-            # Todo: add char type for ''
+            # char type
+            string += start_c
+            if start_c == "'":
+                if len(string) > 3: # including ' '
+                    err(f"char type can only be one character long, line {line}")
+                token_list.append(Token(CHAR, string, line))
+                continue
+
+            # string type
             token_list.append(Token(STRING, string, line))
             continue
 
