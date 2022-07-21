@@ -54,41 +54,48 @@ class scanner:
             if stmt.type in top_level and self.scope != 0:
                 util.err(f"{stmt.type.lower()}s can only be declared at top level, line {self.line}")
             # Debug: allow top level variables for testing
-            if stmt.type not in top_level and self.scope == 0:
-               util.err(f"illegal statement at top level, line {self.line}")
+            #if stmt.type not in top_level and self.scope == 0:
+               #util.err(f"illegal statement at top level, line {self.line}")
                 
             self.handlers[stmt.type](stmt)
 
-        for _, f in self.dec_funcs.items():
-            self.scan_function_body(f)
+        # Scan function bodies after global pass
+        if self.scope == 0:
+            for _, f in self.dec_funcs.items():
+                self.scan_function_body(f)
 
-    # Converts mathing type kinds to base type, does checks on validity of
-    # assignment. Returns new type if converted.
-    def validate_assignment(self, name: str, typ: Type) -> Type:
-        # Declaration errors
-        if name in keyword_lookup or name in typeword_lookup:
-            util.err(f"keywords cannot be used as variable names, line {self.line}")
-        if not typ:
-            util.err(f"cannot assign null to a variable, line {self.line}")
+    # Verifies types and returns the default type for types such as int (i32), float (f32) etc
+    def validate_type(self, typ: Type) -> Type:
+        if typ == TYPE_USRDEF:
+            err(f"debug: userdef types not implemented yet, line {self.line}")
+        elif typ == TYPE_INT:
+            typ = Type(TYPE_I32)
+        elif typ == TYPE_FLOAT:
+            typ = Type(TYPE_F32)
 
         return typ
 
     # Declare new variable to current scope, throws an error if already declared.
     # Warns if a variable is being shadowed
     def declare(self, name: str, typ: Type):
+        # Declaration errors
+        if name in keyword_lookup or name in typeword_lookup:
+            util.err(f"keywords cannot be used as variable names, line {self.line}")
+        if not typ:
+            util.err(f"cannot assign null to a variable, line {self.line}")
+
         scope = self.scope_list[self.scope]
         if name in scope:
             util.err(f"'{name}' is already declared, line {self.line}")
         for i in range(self.scope):
             if name in self.scope_list[i]:
-                warn(f"variable shadowing of '{name}', line {self.line}")
+                util.warn(f"variable shadowing of '{name}', line {self.line}")
 
-        scope[name] = self.validate_assignment(name, typ)
+        scope[name] = typ
 
     # Does not assign a value but checks if the variable is defined and that the
     # type matches the original value.
     def assign(self, name: str, typ: Type):
-        typ = self.validate_assignment(name, typ)
         i = self.scope
         while i > -1:
             scope = self.scope_list[i]
@@ -127,6 +134,7 @@ class scanner:
     # Pops scope
     def pop_scope(self):
         self.scope -= 1
+        # Todo: check for unused variables
         self.scope_list.pop()
 
 
@@ -140,8 +148,9 @@ class scanner:
         expr_type = self.eval_expr(stmt.expr)
         self.declare(stmt.name.lexeme, expr_type)
         if stmt.vtype:
-            if expr_type != stmt.vtype:
-                util.err(f"mismatched types in assignment, expected {stmt.vtype}, got {expr_type}, line {self.line}")
+            expect_t = self.validate_type(stmt.vtype)
+            if expr_type != expect_t:
+                util.err(f"mismatched types in assignment, expected {expect_t}, got {expr_type}, line {self.line}")
         else: # colon equal declaration
             stmt.vtype = expr_type
 
@@ -184,8 +193,12 @@ class scanner:
 
         self.returned = self.scope
 
-    # Evaluates an expression and returns the evaluated type and error (None)
+    # Wrapper for the evaluation to return corrected types
     def eval_expr(self, expr: Expression) -> Type:
+        return self.validate_type(self.eval_expr_wrap(expr))
+
+    # Evaluates an expression and returns the evaluated type
+    def eval_expr_wrap(self, expr: Expression) -> Type:
         if expr.type == EXPR_VARIABLE:
             return self.get_var(expr.tokens[0].lexeme)
 
@@ -200,7 +213,6 @@ class scanner:
             # other instances are errors
             util.err(f"unexpected argument list, line {self.line}")
 
-        # Todo: hoist function calls
         elif expr.type == EXPR_CALL:
             func = self.get_func(expr.callee.lexeme)
             args = expr.inner
@@ -222,13 +234,13 @@ class scanner:
 
             return func.return_t
 
-
         elif expr.type == EXPR_UNARY:
             right = self.eval_expr(expr.right)
             op = expr.operator
             if op.type in (MINUS, BIT_NEGATE):
                 if right.kind != KIND_NUMBER:
                     util.err(f"invalid operator '{op}' for type {right}, line {self.line}")
+                right.negative = not right.negative
                 return right
             if right.kind != KIND_BOOL:
                 util.err(f"invalid operator '{op}' for type {right}, line {self.line}")
@@ -252,7 +264,7 @@ class scanner:
                 util.err(f"type {arr.type} is not indexable, line {self.line}")
 
             index = self.eval_expr(expr.inner)
-            if index not in COLLECTION_UNSIGNED:
+            if index.float:
                 util.err(f"expected index to be integer, got {index}, line {self.line}")
 
             # Todo: handle negative indexing
@@ -288,6 +300,7 @@ class scanner:
                 if op.type not in binary_op_combos[n.kind]:
                     util.err(f"invalid operator '{op}' for type {n}, line {self.line}")
 
+            # Todo: make function to check if number is signed/negative
             if op.type in (BIT_OR, BIT_XOR, BIT_AND, BIT_LSHIFT, BIT_RSHIFT):
                 if op.type in (BIT_LSHIFT, BIT_RSHIFT):
                     # check if right is unsigned int

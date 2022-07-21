@@ -15,10 +15,13 @@ class Token:
         return self.lexeme
 
 class Type:
-    def __init__(self, typ: str, complex: list = None, sub_type: str = None):
+    def __init__(self, typ: str, complex: list = None, sub_type: str = None, negative: bool = False):
         self.type = typ
         self.sub_t = sub_type or TYPE_NONE
         self.set_kind()
+
+        self.negative = negative
+        self.float = self.type in (TYPE_F32, TYPE_FLOAT, TYPE_F64)
 
         # list of types in order of definition
         self.complex: list[str] = complex
