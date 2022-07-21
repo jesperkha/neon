@@ -72,6 +72,7 @@ def tokenize(source: str) -> list[Token]:
                         if source[idx] == "\n":
                             break
                         idx += 1
+                    line += 1
                     continue
 
                 token_list.append(Token(t, dbtoken, line))
