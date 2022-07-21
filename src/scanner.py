@@ -12,7 +12,6 @@ class Function:
         self.params = params
         self.body = body
 
-# Todo: validate types (check if defined)
 class scanner:
     def __init__(self):
         self.line = 0
@@ -67,11 +66,16 @@ class scanner:
     # Verifies types and returns the default type for types such as int (i32), float (f32) etc
     def validate_type(self, typ: Type) -> Type:
         if typ == TYPE_USRDEF:
-            err(f"debug: userdef types not implemented yet, line {self.line}")
+            util.err(f"debug: userdef types not implemented yet, line {self.line}")
         elif typ == TYPE_INT:
             typ = Type(TYPE_I32)
         elif typ == TYPE_FLOAT:
             typ = Type(TYPE_F32)
+        elif typ == TYPE_ARRAY:
+            if typ.sub_type == TYPE_INT:
+                typ.sub_type = Type(TYPE_I32)
+            elif typ.sub_type == TYPE_FLOAT:
+                typ.sub_type = Type(TYPE_F32)
 
         return typ
 
@@ -142,7 +146,7 @@ class scanner:
         util.err(f"invalid statement, line {self.line}")
 
     def scan_stmt_expr(self, stmt: Statement):
-        self.eval_expr(stmt.expr)
+        t = self.eval_expr(stmt.expr)
 
     def scan_stmt_declare(self, stmt: Statement):
         expr_type = self.eval_expr(stmt.expr)
@@ -253,10 +257,10 @@ class scanner:
                 for idx, t in enumerate(types):
                     if t != inner_t:
                         util.err(f"type of index {idx} did not match the first element in array literal; expected {inner_t}, got {t}, line {self.line}")
-                return Type(TYPE_ARRAY, sub_type=inner_t)
+                return Type(TYPE_ARRAY, compl="[]", sub_type=inner_t)
 
             inner_t = self.eval_expr(expr.inner)
-            return Type(TYPE_ARRAY, sub_type=inner_t)
+            return Type(TYPE_ARRAY, compl="[]", sub_type=inner_t)
 
         elif expr.type == EXPR_INDEX:
             arr = self.eval_expr(expr.array)
@@ -269,7 +273,7 @@ class scanner:
 
             # Todo: handle negative indexing
             # Todo: check index out of range
-            return arr.sub_t
+            return arr.sub_type
 
         elif expr.type == EXPR_LITERAL:
             tok = expr.tokens[0]

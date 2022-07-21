@@ -15,18 +15,16 @@ class Token:
         return self.lexeme
 
 class Type:
-    def __init__(self, typ: str, complex: list = None, sub_type: str = None, negative: bool = False):
+    def __init__(self, typ: str, compl: str = "", sub_type = None, negative: bool = False):
         self.type = typ
-        self.sub_t = sub_type or TYPE_NONE
         self.set_kind()
 
         self.negative = negative
         self.float = self.type in (TYPE_F32, TYPE_FLOAT, TYPE_F64)
 
-        # list of types in order of definition
-        self.complex: list[str] = complex
-        if not self.complex:
-            self.complex = [self.type.lower()]
+        # Complex type name formed after init
+        self.complex = compl
+        self.sub_type = sub_type
     
     def set_kind(self):
         if self.type in (TYPE_BOOL):
@@ -41,7 +39,9 @@ class Type:
             self.kind = KIND_NONE
     
     def str(self) -> str:
-        return "".join(self.complex)
+        if self.sub_type:
+            return self.complex + self.sub_type.str()
+        return self.type
     
     def __eq__(self, o: object) -> bool:
         if type(o) == str: # allow checking for type constant
@@ -52,7 +52,7 @@ class Type:
         return self.type != TYPE_NONE
 
     def __str__(self) -> str:
-        return self.str()
+        return self.str().lower()
 
 class Expression:
     def __init__(self, typ: str, tokens: list, line: int):

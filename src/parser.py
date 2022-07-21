@@ -161,7 +161,7 @@ class stmt_parser:
                 stmt.name  = left[0]
                 stmt.vtype = self.expect_type(False)
                 stmt.expr  = parse_expression(s[1])
-                self.idx = end_idx
+                self.idx   = end_idx
                 if not stmt.vtype:
                     stmt.type = STMT_ASSIGN
                     return stmt
@@ -266,25 +266,31 @@ class stmt_parser:
             if not must:
                 return Type(TYPE_NONE)
             err(f"expected colon before type, line {self.line}")
-        stack = []
+
+        final = ""
         last  = None
+        count = 0
         self.advance()
         while t := self.advance():
+            count += 1
             if t.type == IDENTIFIER:
-                stack.append(t.lexeme)
                 last = t.lexeme
                 break
             elif t.type == STAR:
-                stack.append("*")
+                final += "*"
             elif t.type == LEFT_SQUARE:
-                self.advance() # skip next bracket
-                stack.append("[]")
+                self.expect_token(Token(RIGHT_SQUARE, "]", self.line))
+                final += "[]"
             else:
                 err(f"invalid token in type: '{t.lexeme}', line {self.line}")
-        if last in typeword_lookup:
-            return Type(typeword_lookup[last], stack)
 
-        return Type(TYPE_USRDEF, stack)
+        if last in typeword_lookup:
+            if count > 1:
+                return Type(TYPE_ARRAY, compl=final, sub_type=Type(typeword_lookup[last]))
+        
+            return Type(typeword_lookup[last])
+
+        return Type(TYPE_USRDEF, compl=final, sub_type=last)
     
     # Checks for block statement. Consumes block and returns block
     # Raises error on no block, as well as internal statement parsing
