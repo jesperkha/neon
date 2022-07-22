@@ -51,8 +51,8 @@ def tokenize(source: str) -> list[Token]:
             # char type
             string += start_c
             if start_c == "'":
-                if len(string) > 3: # including ' '
-                    err(f"char type can only be one character long, line {line}")
+                if len(string) != 3: # including ' '
+                    err(f"char type must be one character long, line {line}")
                 token_list.append(Token(CHAR, string, line))
                 continue
 

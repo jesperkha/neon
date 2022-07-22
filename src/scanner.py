@@ -5,6 +5,13 @@ from tokens import *
 def scan(ast: list[Statement]):
     scanner().scan(ast)
 
+class Variable:
+    def __init__(self, name: str, typ: Type, line: int):
+        self.name = name
+        self.type = typ
+        self.used = False
+        self.line = line
+
 class Function:
     def __init__(self, name: str, return_t: Type, params: list, body: list[Statement]):
         self.name = name
@@ -79,6 +86,14 @@ class scanner:
 
         return typ
 
+    # Returns true if variable is defined
+    def is_defined(self, name: str, scope: dict = None) -> bool:
+        s = self.scope_list[self.scope] if not scope else scope
+        for _, v in s.items():
+            if v.name == name:
+                return True
+        return False
+
     # Declare new variable to current scope, throws an error if already declared.
     # Warns if a variable is being shadowed
     def declare(self, name: str, typ: Type):
@@ -89,13 +104,13 @@ class scanner:
             util.err(f"cannot assign null to a variable, line {self.line}")
 
         scope = self.scope_list[self.scope]
-        if name in scope:
+        if self.is_defined(name, scope):
             util.err(f"'{name}' is already declared, line {self.line}")
         for i in range(self.scope):
-            if name in self.scope_list[i]:
+            if self.is_defined(name, self.scope_list[i]):
                 util.warn(f"variable shadowing of '{name}', line {self.line}")
 
-        scope[name] = typ
+        scope[name] = Variable(name, typ, self.line)
 
     # Does not assign a value but checks if the variable is defined and that the
     # type matches the original value.
@@ -103,11 +118,12 @@ class scanner:
         i = self.scope
         while i > -1:
             scope = self.scope_list[i]
-            if name in scope:
-                prev = scope[name]
+            if self.is_defined(name, scope):
+                prev = scope[name].type
                 if prev != typ:
                     util.err(f"mismatched types in assignment, expected {prev}, got {typ}, line {self.line}")
-                scope[name] = typ
+                # Todo: implement array length state
+                scope[name].type = typ # Update array length
                 return
             i -= 1
 
@@ -118,8 +134,10 @@ class scanner:
         i = self.scope
         while i > -1:
             scope = self.scope_list[i]
-            if name in scope:
-                return scope[name]
+            if self.is_defined(name, scope):
+                var = scope[name]
+                var.used = True
+                return var.type
             i -= 1
         util.err(f"'{name}' is undefined, line {self.line}")
     
@@ -137,8 +155,12 @@ class scanner:
     
     # Pops scope
     def pop_scope(self):
-        self.scope -= 1
         # Todo: check for unused variables
+        for _, v in self.scope_list[self.scope].items():
+            if not v.used:
+                util.warn(f"'{v.name}' is unused, line {v.line}")
+
+        self.scope -= 1
         self.scope_list.pop()
 
 

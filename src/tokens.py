@@ -43,7 +43,8 @@ class Type:
 
     def append_type(self, t):
         if self.type == TYPE_NONE:
-            self.type = t
+            self.type = t.type
+            self.set_kind()
         elif self.sub_type:
             self.sub_type.append_type(t)
         else:
