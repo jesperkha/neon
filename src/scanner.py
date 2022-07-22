@@ -261,7 +261,7 @@ class scanner:
                 return Type(TYPE_ARRAY, compl="[]", sub_type=inner_t)
 
             inner_t = self.eval_expr(expr.inner)
-            return Type(TYPE_ARRAY, compl="[]", sub_type=inner_t)
+            return Type(TYPE_ARRAY, compl="[]", sub_type=inner_t, empty=inner_t==EXPR_EMPTY)
 
         elif expr.type == EXPR_INDEX:
             arr = self.eval_expr(expr.array)
@@ -335,8 +335,8 @@ class scanner:
                         util.err(e.format(left.sub_type, right, self.line))
                     return left
 
-                if left.sub_type != right.sub_type:
-                    util.err(f"mismatched array types in expression; {left.sub_type} and {right.sub_type}, line {self.line}")
+                if left != right:
+                    util.err(f"mismatched array types in expression; {left} and {right}, line {self.line}")
                 return left
 
             if left == right:

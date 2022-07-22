@@ -146,36 +146,27 @@ class stmt_parser:
             return stmt
 
         elif typ == IDENTIFIER:
+            start = self.idx # Keep track to reset on failure
             stmt = Statement(STMT_DECLARE, self.line)
-            end_idx = seek_token(self.tokens, NEWLINE, self.idx)
-            if end_idx == -1:
-                end_idx = self.length
+            stmt.name = self.expect_identifier()
+            cur = self.current().type
+            if cur == COLON_EQUAL:
+                # declaration without type
+                self.expect_token(Token(COLON_EQUAL, ":=", self.line))
+                stmt.expr = self.expect_expr()
+                return stmt
 
-            line = self.tokens[self.idx:end_idx]
-            if s := split(line, EQUAL):
+            elif cur in (COLON, EQUAL):
                 # declaration or asignment (depending on type present)
-                left = s[0]
-                if left[0].type != IDENTIFIER:
-                    err(f"expected identifer on left side of '=', line {self.line}")
-                self.advance() # skip identifer to check type
-                stmt.name  = left[0]
                 stmt.vtype = self.expect_type(False)
-                stmt.expr  = parse_expression(s[1])
-                self.idx   = end_idx
+                self.expect_token(Token(EQUAL, "=", self.line))
+                stmt.expr = self.expect_expr()
                 if not stmt.vtype:
                     stmt.type = STMT_ASSIGN
                     return stmt
                 return stmt
-
-            elif s := split(line, COLON_EQUAL):
-                # declaration without type
-                left = s[0]
-                if len(left) != 1 or left[0].type != IDENTIFIER:
-                    err(f"expected identifer on left side of ':=', line {self.line}")
-                stmt.name = left[0]
-                stmt.expr = parse_expression(s[1])
-                self.idx = end_idx
-                return stmt
+             
+            self.idx = start
 
         # fallthrough means expression statement
         stmt = Statement(STMT_EXPR, self.line)
@@ -267,30 +258,33 @@ class stmt_parser:
                 return Type(TYPE_NONE)
             err(f"expected colon before type, line {self.line}")
 
-        final = ""
-        last  = None
-        count = 0
         self.advance()
+        typ = Type(TYPE_NONE)
         while t := self.advance():
-            count += 1
             if t.type == IDENTIFIER:
-                last = t.lexeme
-                break
+                u = Type(TYPE_NONE)
+                if t.lexeme in typeword_lookup:
+                    u = Type(typeword_lookup[t.lexeme])
+                else:
+                    u = Type(USER_DEFINED, compl=t.lexeme)
+
+                typ.append_type(u)
+                return typ
+
             elif t.type == STAR:
-                final += "*"
+                err(f"debug: pointer type not implemented yet, line {self.line}")
+
             elif t.type == LEFT_SQUARE:
                 self.expect_token(Token(RIGHT_SQUARE, "]", self.line))
-                final += "[]"
+                if typ:
+                    typ.append_type(Type(TYPE_ARRAY, compl="[]"))
+                else:
+                    typ = Type(TYPE_ARRAY, compl="[]")
+
             else:
                 err(f"invalid token in type: '{t.lexeme}', line {self.line}")
 
-        if last in typeword_lookup:
-            if count > 1:
-                return Type(TYPE_ARRAY, compl=final, sub_type=Type(typeword_lookup[last]))
-        
-            return Type(typeword_lookup[last])
-
-        return Type(TYPE_USRDEF, compl=final, sub_type=last)
+        return typ
     
     # Checks for block statement. Consumes block and returns block
     # Raises error on no block, as well as internal statement parsing
@@ -308,11 +302,15 @@ class stmt_parser:
         stmt.stmts = parse(interval)
         return stmt
 
-    # Checks to see if the next token matches. Raises error. Consumes token.
-    def expect_token(self, token: Token):
+    # Checks to see if the next token matches. Raises error. Consumes
+    # token. Returns true if token was found.
+    def expect_token(self, token: Token, must: bool = True) -> bool:
         t = self.advance()
         if t.type != token.type:
-            err(f"expected '{token.lexeme}', got '{t.lexeme}', line {self.line}")
+            if must:
+                err(f"expected '{token.lexeme}', got '{t.lexeme}', line {self.line}")
+            return False
+        return True
 
 # Recursively parses token list into an expression tree
 def parse_expression(tokens: list) -> Expression:

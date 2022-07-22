@@ -15,7 +15,7 @@ class Token:
         return self.lexeme
 
 class Type:
-    def __init__(self, typ: str, compl: str = "", sub_type = None, negative: bool = False):
+    def __init__(self, typ: str, compl: str = "", sub_type = None, negative: bool = False, empty: bool = False):
         self.type = typ
         self.set_kind()
 
@@ -25,6 +25,9 @@ class Type:
         # Complex type name formed after init
         self.complex = compl
         self.sub_type = sub_type
+        
+        # For comparing arrays
+        self.empty = empty
     
     def set_kind(self):
         if self.type in (TYPE_BOOL):
@@ -37,15 +40,43 @@ class Type:
             self.kind = KIND_ARRAY
         else:
             self.kind = KIND_NONE
+
+    def append_type(self, t):
+        if self.type == TYPE_NONE:
+            self.type = t
+        elif self.sub_type:
+            self.sub_type.append_type(t)
+        else:
+            self.sub_type = t
     
     def str(self) -> str:
         if self.sub_type:
             return self.complex + self.sub_type.str()
+
         return self.type
-    
+
+    def compare_arrays(self, a, b) -> bool:
+        if a.sub_type == b.sub_type:
+            return True
+
+        if a.empty or b.empty:
+            return True
+
+        if (not a.sub_type and b.sub_type) or (a.sub_type and not b.sub_type):
+            return True
+
+        if a.sub_type == b.sub_type == TYPE_ARRAY:
+            return self.compare_arrays(a.sub_type, b.sub_type)
+
+        return a.str() == b.str()
+
     def __eq__(self, o: object) -> bool:
         if type(o) == str: # allow checking for type constant
             return self.type == o
+
+        if self.type == TYPE_ARRAY and o.type == TYPE_ARRAY:
+            return self.compare_arrays(self, o)
+
         return self.str() == o.str()
     
     def __bool__(self) -> bool:
