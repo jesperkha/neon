@@ -162,7 +162,8 @@ class scanner:
         self.assign(stmt.name.lexeme, self.eval_expr(stmt.expr))
 
     def scan_stmt_func(self, stmt: Statement):
-        func = Function(stmt.name.lexeme, stmt.vtype, stmt.params, stmt.block.stmts)
+        return_t = self.validate_type(stmt.vtype)
+        func = Function(stmt.name.lexeme, return_t, stmt.params, stmt.block.stmts)
         self.dec_funcs[stmt.name.lexeme] = func
 
     def scan_function_body(self, func: Function):
