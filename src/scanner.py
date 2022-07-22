@@ -296,8 +296,8 @@ class scanner:
             if op.type == IN:
                 if right != TYPE_ARRAY:
                     util.err(f"expected right expression to be array, got {right}, line {self.line}")
-                if left != right.sub_t:
-                    util.err(f"left expression did not match array type; expected {right.sub_t}, got {left}, line {self.line}") 
+                if left != right.sub_type:
+                    util.err(f"left expression did not match array type; expected {right.sub_type}, got {left}, line {self.line}") 
                 return Type(TYPE_BOOL)
 
             for n in (left, right): # check operator
@@ -325,17 +325,17 @@ class scanner:
                 # Matches array and value types, raises error on mismatch
                 e = "new element does not match the array type; expected {}, got {}, line {}"
                 if right == TYPE_ARRAY and left != TYPE_ARRAY:
-                    if right.sub_t != left:
-                        util.err(e.format(right.sub_t, left, self.line))
+                    if right.sub_type != left:
+                        util.err(e.format(right.sub_type, left, self.line))
                     return right
 
                 if right != TYPE_ARRAY and left == TYPE_ARRAY:
-                    if left.sub_t != right:
-                        util.err(e.format(left.sub_t, right, self.line))
+                    if left.sub_type != right:
+                        util.err(e.format(left.sub_type, right, self.line))
                     return left
 
-                if left.sub_t != right.sub_t:
-                    util.err(f"mismatched array types in expression; {left.sub_t} and {right.sub_t}, line {self.line}")
+                if left.sub_type != right.sub_type:
+                    util.err(f"mismatched array types in expression; {left.sub_type} and {right.sub_type}, line {self.line}")
                 return left
 
             if left == right:
