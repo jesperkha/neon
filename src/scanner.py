@@ -9,11 +9,12 @@ class Variable:
         self.line = line
 
 class Function:
-    def __init__(self, name: str, return_t: Type, params: list, body: list[Statement]):
+    def __init__(self, name: str, return_t: Type, params: list, body: list[Statement], builtin: bool = False):
         self.name = name
         self.return_t = return_t
         self.params = params
         self.body = body
+        self.builtin = builtin
 
 class Scanner:
     def __init__(self):
@@ -32,7 +33,10 @@ class Scanner:
         self.scope_list = [{}]
 
         # Global declarations
-        self.dec_funcs = {}
+        self.dec_funcs = {
+                "println": Function("println", Type(TYPE_NONE), [("msg", Type(TYPE_ANY))], [], True)
+        }
+
         self.dec_structs = {}
 
         self.handlers = {
@@ -61,9 +65,12 @@ class Scanner:
                 
             scstmt = self.handlers[stmt.type](stmt)
 
+        if self.scope != 0:
+            return
+        
         # Scan function bodies after global pass
-        if self.scope == 0:
-            for _, f in self.dec_funcs.items():
+        for _, f in self.dec_funcs.items():
+            if not f.builtin:
                 self.scan_function_body(f)
 
     # Verifies types and returns the default type for types such as int (i32), float (f32) etc
@@ -97,7 +104,7 @@ class Scanner:
         if name in keyword_lookup or name in typeword_lookup:
             util.err(f"keywords cannot be used as variable names, line {self.line}")
         if not typ:
-            util.err(f"cannot assign null to a variable, line {self.line}")
+            util.err(f"cannot assign {typ} to a variable, line {self.line}")
 
         scope = self.scope_list[self.scope]
         if self.is_defined(name, scope):
@@ -216,8 +223,11 @@ class Scanner:
         self.returned = self.scope
 
     # Wrapper for the evaluation to return corrected types
-    def eval_expr(self, expr: Expression) -> Type:
-        return self.validate_type(self.eval_expr_wrap(expr))
+    def eval_expr(self, expr: Expression, err_none: bool = False) -> Type:
+        typ = self.validate_type(self.eval_expr_wrap(expr))
+        if err_none and typ == TYPE_NONE:
+            util.err(f"cannot use {typ} in expression, line {self.line}")
+        return typ
 
     # Evaluates an expression and returns the evaluated type
     def eval_expr_wrap(self, expr: Expression) -> Type:
@@ -247,7 +257,7 @@ class Scanner:
                     arg_list.append(self.eval_expr(e))
 
             if len(arg_list) != len(func.params):
-                util.err(f"'{func.name}' takes {len(func.params)} arguments, got {len(arg_list)}, line {self.line}")
+                util.err(f"'{func.name}' takes {len(func.params)} argument{'' if len(func.params) == 1 else 's'}, got {len(arg_list)}, line {self.line}")
 
             for idx, arg in enumerate(arg_list):
                 name, typ = func.params[idx]
@@ -257,7 +267,7 @@ class Scanner:
             return func.return_t
 
         elif expr.type == EXPR_UNARY:
-            right = self.eval_expr(expr.right)
+            right = self.eval_expr(expr.right, True)
             op = expr.operator
             if op.type in (MINUS, BIT_NEGATE):
                 if right.kind != KIND_NUMBER:
@@ -270,7 +280,7 @@ class Scanner:
 
         elif expr.type == EXPR_ARRAY:
             if expr.inner.type == EXPR_ARGS:
-                types = [self.eval_expr(typ) for typ in expr.inner.exprs]
+                types = [self.eval_expr(typ, True) for typ in expr.inner.exprs]
                 inner_t = types[0]
                 for idx, t in enumerate(types):
                     if t != inner_t:
@@ -306,8 +316,8 @@ class Scanner:
             return Type(TYPE_INT)
 
         elif expr.type == EXPR_BINARY:
-            left  = self.eval_expr(expr.left)
-            right = self.eval_expr(expr.right)
+            left  = self.eval_expr(expr.left, True)
+            right = self.eval_expr(expr.right, True)
             op = expr.operator
             
             # Todo: implement the remaining ops

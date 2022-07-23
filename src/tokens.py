@@ -75,6 +75,9 @@ class Type:
         if type(o) == str: # allow checking for type constant
             return self.type == o
 
+        if TYPE_ANY in (self.type, o.type):
+            return True
+
         if self.type == TYPE_ARRAY and o.type == TYPE_ARRAY:
             return self.compare_arrays(self, o)
 
@@ -203,6 +206,7 @@ KIND_ARRAY  = "K_ARRAY"
 
 # Types
 TYPE_NONE   = "NONE"
+TYPE_ANY    = "ANY"
 TYPE_STRING = "STRING"
 TYPE_CHAR   = "CHAR"
 TYPE_INT    = "INT"
