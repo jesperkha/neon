@@ -4,8 +4,9 @@ import util
 type_convertion = {
         "STRING": "char*",
         "NONE": "void",
-        "INT": "int",
-        "BOOL": "bool"
+        "BOOL": "bool",
+        "I32": "int",
+        "F32": "float"
 }
 
 symbol_convertion = {
@@ -19,37 +20,53 @@ class Compiler:
         self.spaces = 1
 
     def compile(self, ast: list[Statement]) -> str:
-        return self.stmts(ast).str()
+        self.stmts(ast)
+        return self.str()
 
     def stmts(self, ast: list[Statement]):
         for stmt in ast:
             self.indent_line()
             self.stmt(stmt)
 
-        return self.newline()
+        self.newline()
 
     def stmt(self, stmt: Statement):
         t = stmt.type
 
         if t == STMT_FUNC:
-            return self \
-                    .type(stmt.vtype) \
-                    .name(stmt.name) \
-                    .params(stmt.params) \
-                    .brace_start() \
-                    .stmts(stmt.block.stmts) \
-                    .brace_end()
+            self.type(stmt.vtype)
+            self.name(stmt.name)
+            self.params(stmt.params)
+            self.brace_start()
+            self.stmts(stmt.block.stmts)
+            self.brace_end()
+            return
 
-        elif t == STMT_EXPR:
-            return self \
-                    .expr(stmt.expr) \
-                    .semicolon()
+        if t == STMT_EXPR:
+            self.expr(stmt.expr)
+            self.semicolon()
+            return
 
-        elif t == STMT_RETURN:
-            return self \
-                    .add("return") \
-                    .expr(stmt.expr) \
-                    .semicolon()
+        if t == STMT_RETURN:
+            self.add("return")
+            self.expr(stmt.expr)
+            self.semicolon()
+            return
+
+        if t == STMT_DECLARE:
+            self.type(stmt.vtype)
+            self.name(stmt.name)
+            self.add("=")
+            self.expr(stmt.expr)
+            self.semicolon()
+            return
+        
+        if t == STMT_ASSIGN:
+            self.name(stmt.name)
+            self.add("=")
+            self.expr(stmt.expr)
+            self.semicolon()
+            return
 
         util.err(f"compilation for {t} not implemented, line {stmt.line}")
 
@@ -57,33 +74,40 @@ class Compiler:
         t = expr.type
 
         if t == EXPR_EMPTY:
-            return self
+            return
 
-        elif t == EXPR_ARGS:
+        if t == EXPR_ARGS:
             for e in expr.exprs:
                 self.expr(e)
                 self.string += ","
             if len(expr.exprs) > 0:
                 self.pop()
-            return self
+            return
         
-        elif t == EXPR_LITERAL:
-            return self.name(expr.tokens[0])
+        if t == EXPR_LITERAL:
+            self.name(expr.tokens[0])
+            return
 
-        elif t == EXPR_VARIABLE:
-            return self.name(expr.tokens[0])
+        if t == EXPR_VARIABLE:
+            self.name(expr.tokens[0])
+            return
         
-        elif t == EXPR_UNARY:
-            return self \
-                    .symbol(expr.operator, True) \
-                    .expr(expr.right)
+        if t == EXPR_UNARY:
+            self.symbol(expr.operator, True)
+            self.expr(expr.right)
+            return
 
-        elif t == EXPR_CALL:
-            return self \
-                    .name(expr.callee) \
-                    .paren_start() \
-                    .expr(expr.inner) \
-                    .paren_end()
+        if t == EXPR_CALL:
+            self.name(expr.callee)
+            self.paren_start()
+            self.expr(expr.inner)
+            self.paren_end()
+            return
+
+        if t == EXPR_ARRAY:
+            self.add("[")
+            self.add("]")
+            return
                 
         util.err(f"compiling for {t} is not implemented")
 
@@ -98,22 +122,19 @@ class Compiler:
 
             func(self, s)
             self.spaces = 1
-            return self
-
+            
         return wrap
 
     # Recursives
 
     def pop(self):
         self.string = self.string[:-1]
-        return self
-
+        
     def indent_line(self, change: int = 0):
         self.indent += change
         for n in range(self.indent):
            self.string += "\t"
-        return self
-
+        
     def symbol(self, sym: Token, unary: bool = False):
         if sym.lexeme in symbol_convertion:
             self.add(symbol_convertion[sym.lexeme])
@@ -121,56 +142,50 @@ class Compiler:
             self.name(sym)
         if unary:
             self.spaces = 0
-        return self
-
+        
     @autospace
     def add(self, s: str):
         if type(s) == Compiler:
             self.string += s.str()
         else:
             self.string += s
-        return self
-    
+            
     @autospace
-    def type(self, typ: Type):
+    def type(self, typ: Type, reference: bool = False):
         if typ.type in type_convertion:
             self.string += type_convertion[typ.type]
+        elif typ.type == TYPE_ARRAY:
+            self.type(typ.sub_type)
+            self.string += typ.ctype
         else:
             self.string += f"ne_{typ}_t"
-        return self
-
+        
     @autospace
     def name(self, name: Token):
         self.string += name.lexeme
-        return self
-
+        
     def newline(self):
         self.string += "\n"
         self.spaces = 0
-        return self
-
+        
     def semicolon(self):
         self.string += ";"
         self.newline()
-        return self
-    
+            
     def paren_start(self):
         self.string += "("
         self.spaces = 0
-        return self
-
+        
     def paren_end(self):
         self.string += ")"
-        return self
-
+        
     def brace_start(self):
         self.indent_line()
         self.newline()
         self.add("{")
         self.newline()
         self.indent += 1
-        return self
-
+        
     def brace_end(self):
         self.pop() # remove additional newline
         self.indent_line(-1)
@@ -178,8 +193,7 @@ class Compiler:
         self.add("}")
         self.newline()
         self.newline()
-        return self
-
+        
     def params(self, params):
         self.paren_start()
         for a in params:
@@ -192,5 +206,4 @@ class Compiler:
             self.pop()
 
         self.paren_end()
-        return self
-
+        

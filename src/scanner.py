@@ -84,10 +84,7 @@ class Scanner:
         elif typ == TYPE_FLOAT:
             typ = Type(TYPE_F32)
         elif typ == TYPE_ARRAY:
-            if typ.sub_type == TYPE_INT:
-                typ.sub_type = Type(TYPE_I32)
-            elif typ.sub_type == TYPE_FLOAT:
-                typ.sub_type = Type(TYPE_F32)
+            typ.sub_type = self.validate_type(typ.sub_type)
 
         return typ
 
@@ -179,6 +176,7 @@ class Scanner:
         self.declare(stmt.name.lexeme, expr_type)
         if stmt.vtype:
             expect_t = self.validate_type(stmt.vtype)
+            stmt.vtype = expect_t
             if expr_type != expect_t:
                 util.err(f"mismatched types in assignment, expected {expect_t}, got {expr_type}, line {self.line}")
         else: # colon equal declaration
@@ -189,6 +187,7 @@ class Scanner:
 
     def scan_stmt_func(self, stmt: Statement):
         return_t = self.validate_type(stmt.vtype)
+        stmt.vtype = return_t
         func = Function(stmt.name.lexeme, return_t, stmt.params, stmt.block.stmts)
         self.dec_funcs[stmt.name.lexeme] = func
 

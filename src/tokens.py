@@ -24,6 +24,7 @@ class Type:
 
         # Complex type name formed after init
         self.complex = compl
+        self.ctype = ""
         self.sub_type = sub_type
         
         # For comparing arrays
@@ -48,6 +49,7 @@ class Type:
         elif self.sub_type:
             self.sub_type.append_type(t)
         else:
+            self.ctype += "*"
             self.sub_type = t
     
     def str(self) -> str:
