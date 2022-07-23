@@ -50,7 +50,7 @@ class Scanner:
         }
 
     # Scans entire AST, returns nothing, raises error at first fault.
-    def scan(self, statements: list[Statement]):
+    def scan(self, statements: list[Statement]) -> list[Statement]:
         for stmt in statements:
             self.line = stmt.line
             if stmt.type not in self.handlers:
@@ -63,7 +63,7 @@ class Scanner:
             #if stmt.type not in top_level and self.scope == 0:
                #util.err(f"illegal statement at top level, line {self.line}")
                 
-            scstmt = self.handlers[stmt.type](stmt)
+            self.handlers[stmt.type](stmt)
 
         if self.scope != 0:
             return
@@ -72,6 +72,8 @@ class Scanner:
         for _, f in self.dec_funcs.items():
             if not f.builtin:
                 self.scan_function_body(f)
+
+        return statements
 
     # Verifies types and returns the default type for types such as int (i32), float (f32) etc
     def validate_type(self, typ: Type) -> Type:
@@ -261,6 +263,7 @@ class Scanner:
 
             for idx, arg in enumerate(arg_list):
                 name, typ = func.params[idx]
+                typ = self.validate_type(typ)
                 if arg != typ:
                     util.err(f"argument {idx+1} in '{func.name}' expects type {typ}, got {arg}, line {self.line}")
 

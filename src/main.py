@@ -1,9 +1,11 @@
 import util
-import lexer
-import parser
-import scanner
 import os
 import sys
+
+from lexer import tokenize
+from parser import Parser
+from scanner import Scanner
+from compiler import Compiler
 
 def compile():
     args = sys.argv[1:]
@@ -17,9 +19,11 @@ def compile():
         util.err(f"could not find '{filename}'")
 
     with open(filename, "r") as f:
-        tok = lexer.tokenize(f.read())
-        ast = parser.Parser(tok).parse()
-        scn = scanner.Scanner().scan(ast)
+        tok = tokenize(f.read())
+        ast = Parser(tok).parse()
+        ast = Scanner().scan(ast)
+        src = Compiler().compile(ast)
+        print(src)
 
 if __name__ == "__main__":
     compile()
