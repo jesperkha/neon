@@ -1,9 +1,5 @@
-# Scanner
 import util
 from tokens import *
-
-def scan(ast: list[Statement]):
-    scanner().scan(ast)
 
 class Variable:
     def __init__(self, name: str, typ: Type, line: int):
@@ -19,7 +15,7 @@ class Function:
         self.params = params
         self.body = body
 
-class scanner:
+class Scanner:
     def __init__(self):
         self.line = 0
         # set after checking a function, used for
@@ -63,7 +59,7 @@ class scanner:
             #if stmt.type not in top_level and self.scope == 0:
                #util.err(f"illegal statement at top level, line {self.line}")
                 
-            self.handlers[stmt.type](stmt)
+            scstmt = self.handlers[stmt.type](stmt)
 
         # Scan function bodies after global pass
         if self.scope == 0:
@@ -155,7 +151,6 @@ class scanner:
     
     # Pops scope
     def pop_scope(self):
-        # Todo: check for unused variables
         for _, v in self.scope_list[self.scope].items():
             if not v.used:
                 util.warn(f"'{v.name}' is unused, line {v.line}")
@@ -168,7 +163,7 @@ class scanner:
         util.err(f"invalid statement, line {self.line}")
 
     def scan_stmt_expr(self, stmt: Statement):
-        t = self.eval_expr(stmt.expr)
+        self.eval_expr(stmt.expr)
 
     def scan_stmt_declare(self, stmt: Statement):
         expr_type = self.eval_expr(stmt.expr)

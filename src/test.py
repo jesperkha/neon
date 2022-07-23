@@ -1,9 +1,10 @@
-import parser
-import lexer
 import tokens
 import os
 import util
-import scanner
+
+from scanner import Scanner
+from parser import Parser, parse_expression
+from lexer import tokenize
 
 # util.DEBUG_MODE = True
 
@@ -51,11 +52,11 @@ scan_cases_valid = [
 def test_cases(prefix: str, cases: list):
     for idx, c in enumerate(cases):
         print(f"{prefix} test {idx+1}: {util.text_red('FAIL')} ", end="")
-        tks = lexer.tokenize(c[0])
+        tks = tokenize(c[0])
         if prefix == "expr":
-            ast = parser.parse_expression(tks)
+            ast = parse_expression(tks)
         elif prefix == "stmt":
-            stmts = parser.parse(tks)
+            stmts = Parser(tks).parse()
             ast = stmts[0]
         errorif(ast.type != c[1], f"(FAIL) expected '{c[1]}', got '{ast.type}'")
         print(f"\r{prefix} test {idx+1}: {util.text_green('pass')}")
@@ -67,7 +68,7 @@ if __name__ == "__main__":
     i = 1
     for c in scan_cases_valid:
         print(f"scan test {i}: {util.text_red('FAIL')} ", end="")
-        scanner.scan(parser.parse(lexer.tokenize(c)))
+        Scanner().scan(Parser(tokenize(c)).parse())
         print(f"\rscan test {i}: {util.text_green('pass')}")
         i += 1
     

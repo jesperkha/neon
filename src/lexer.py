@@ -1,13 +1,7 @@
-# Lexer
-# 
-# This is neons lexer. It takes the raw text from a file and generates tokens from said
-# input. Symbols, identifers, strings, numbers, and keywords are all each their own token 
-# type. The lexer will also raise an error if it finds a symbol it does not recognise, if
-# a string is malformed, or if a number is invalid.
-
-from util import *
 from tokens import *
+import util
 
+# Returns list of Token from source text
 def tokenize(source: str) -> list[Token]:
     "returns a list of `Token` with `type`, `lexeme`, and `line` properties. string lexemes include the quotes"
     token_list = []
@@ -46,13 +40,13 @@ def tokenize(source: str) -> list[Token]:
                 idx += 1
             
             if not terminated:
-                err(f"unterminated string, line {line}")
+                util.err(f"unterminated string, line {line}")
 
             # char type
             string += start_c
             if start_c == "'":
                 if len(string) != 3: # including ' '
-                    err(f"char type must be one character long, line {line}")
+                    util.err(f"char type must be one character long, line {line}")
                 token_list.append(Token(CHAR, string, line))
                 continue
 
@@ -90,7 +84,7 @@ def tokenize(source: str) -> list[Token]:
                 if c.isdecimal():
                     num += c
                 elif c.isidentifier(): # check invalid identifiers to avoid error handling later
-                    err(f"cannot start identifier with digit, line {line}")
+                    util.err(f"cannot start identifier with digit, line {line}")
                 elif c == ".":
                     num += c
                     dot += 1
@@ -99,7 +93,7 @@ def tokenize(source: str) -> list[Token]:
                 idx += 1
 
             if dot > 1 or num.endswith("."):
-                err(f"invalid number literal '{num}', line {line}")
+                util.err(f"invalid number literal '{num}', line {line}")
             if num.replace(".", "").isdecimal():
                 t = Token(NUMBER, num, line)
                 t.isfloat = dot == 1
@@ -127,6 +121,6 @@ def tokenize(source: str) -> list[Token]:
             continue
     
         # fallthrough is error
-        err(f"unexpected token '{char}', line {line}")
+        util.err(f"unexpected token '{char}', line {line}")
 
     return token_list

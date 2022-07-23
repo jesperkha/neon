@@ -111,6 +111,10 @@ class Statement:
         # list of tuple(name, Type)
         self.params: list = []
 
+class ScannedStmt:
+    def __init__(self, stmt: Statement):
+        self.stmt = stmt
+
 _i = 0
 def i():
     global _i

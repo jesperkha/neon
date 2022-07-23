@@ -1,18 +1,5 @@
-# Parser
-# 
-# This is neons parser. It handles parsing tokens into an abstract syntax tree (AST). The 
-# statement parser first looks at the token input and identifier what kind of statement to
-# parse i.e function, struct, variable declaration etc. Then it starts parsing the next
-# tokens, expecting them to be laid out as if the statement is written correctly. If the
-# parser notices an error, like a misplaced keyword, it will halt the compilation and print
-# an error.
-# 
-# There is also an expression parser which takes care of parsing complex expressions with
-# a lot of symbols and value into an expression tree. However, it does not evaluate the
-# expression, nor check for any type errors, or the values of used variables.
-
 from tokens import *
-from util import *
+import util
 
 # Seeks and returns the index of the closing token of a given list, -1 on fail
 def seek(tokens: list[Token], start_t: int, end_t: int, start_idx: int = 0) -> int:
@@ -102,11 +89,7 @@ def verify_brackets(tokens: list[Token], start_t: int, end_t: int) -> bool:
 # expression checks. Any malformed statement will raise and error and
 # halt execution. Does not know the nature of what it parses and only
 # sees deviance from what it expects as an error.
-def parse(tokens: list) -> list[Statement]:
-    return stmt_parser(tokens).parse()
-
-# Statement parser object to keep state when doing recursive parsing
-class stmt_parser:
+class Parser:
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
         self.idx = 0
@@ -176,7 +159,7 @@ class stmt_parser:
     # Peeks next token, raises error on EOF
     def peek(self) -> Token:
         if self.idx + 1 >= self.length:
-            err(f"unexpected end of input, line {self.line}")
+            util.err(f"unexpected end of input, line {self.line}")
         return self.tokens[self.idx+1]
     
     # Returns current token. Does not consume it
@@ -188,7 +171,7 @@ class stmt_parser:
     # Consumes and returns the current Token. Raises error on EOF
     def advance(self, e: bool = True) -> Token:
         if self.idx >= self.length:
-            if e: err(f"unexpected end of input, line {self.line}")
+            if e: util.err(f"unexpected end of input, line {self.line}")
             return None
 
         cur = self.current()
@@ -206,7 +189,7 @@ class stmt_parser:
         kw = self.advance()
         if kw.type != keyword:
             kw_name = [k for k, v in keyword_lookup.items() if v == keyword][0]
-            err(f"expected keyword '{kw_name}', found '{kw.lexeme}', line {self.line}")
+            util.err(f"expected keyword '{kw_name}', found '{kw.lexeme}', line {self.line}")
     
     # Seeks a NEWLINE token and parses the expression in interval.
     # Returns expression. Raises error on EOF. Consumes NEWLINE token
@@ -215,7 +198,7 @@ class stmt_parser:
         if end_idx == -1:
             end_idx = self.length
         token_range = self.tokens[self.idx:end_idx]
-        debug("aaa", token_range)
+        util.debug("aaa", token_range)
         self.idx = end_idx
         return parse_expression(token_range)
     
@@ -223,7 +206,7 @@ class stmt_parser:
     def expect_identifier(self) -> Token:
         t = self.advance()
         if t.type != IDENTIFIER:
-            err(f"expected identifier, got '{t.lexeme}', line {self.line}")
+            util.err(f"expected identifier, got '{t.lexeme}', line {self.line}")
         return t
     
     # Parses function parameters into a list of tuple(name, Type).
@@ -231,7 +214,7 @@ class stmt_parser:
     def expect_params(self) -> list:
         t = self.advance()
         if t.type != LEFT_PAREN:
-            err(f"expected '(' after function name, line {self.line}")
+            util.err(f"expected '(' after function name, line {self.line}")
         if self.current().type == RIGHT_PAREN:
             self.advance()
             return []
@@ -256,7 +239,7 @@ class stmt_parser:
         if self.current().type != COLON:
             if not must:
                 return Type(TYPE_NONE)
-            err(f"expected colon before type, line {self.line}")
+            util.err(f"expected colon before type, line {self.line}")
 
         self.advance()
         typ = Type(TYPE_NONE)
@@ -272,7 +255,7 @@ class stmt_parser:
                 return typ
 
             elif t.type == STAR:
-                err(f"debug: pointer type not implemented yet, line {self.line}")
+                util.err(f"debug: pointer type not implemented yet, line {self.line}")
 
             elif t.type == LEFT_SQUARE:
                 self.expect_token(Token(RIGHT_SQUARE, "]", self.line))
@@ -282,7 +265,7 @@ class stmt_parser:
                     typ = Type(TYPE_ARRAY, compl="[]")
 
             else:
-                err(f"invalid token in type: '{t.lexeme}', line {self.line}")
+                util.err(f"invalid token in type: '{t.lexeme}', line {self.line}")
 
         return typ
     
@@ -291,15 +274,15 @@ class stmt_parser:
     def expect_block(self) -> Statement:
         t = self.current()
         if t.type != LEFT_BRACE:
-            err(f"expected block, found '{t.lexeme}', line {self.line}")
+            util.err(f"expected block, found '{t.lexeme}', line {self.line}")
         
         end_idx = seek(self.tokens, LEFT_BRACE, RIGHT_BRACE, self.idx)
         if end_idx == -1:
-            err(f"expected right brace after block, line {self.line}")
+            util.err(f"expected right brace after block, line {self.line}")
         interval = self.tokens[self.idx+1:end_idx]
         self.idx = end_idx+1
         stmt = Statement(STMT_BLOCK, self.line)
-        stmt.stmts = parse(interval)
+        stmt.stmts = Parser(interval).parse()
         return stmt
 
     # Checks to see if the next token matches. Raises error. Consumes
@@ -308,7 +291,7 @@ class stmt_parser:
         t = self.advance()
         if t.type != token.type:
             if must:
-                err(f"expected '{token.lexeme}', got '{t.lexeme}', line {self.line}")
+                util.err(f"expected '{token.lexeme}', got '{t.lexeme}', line {self.line}")
             return False
         return True
 
@@ -321,19 +304,19 @@ def parse_expression(tokens: list) -> Expression:
     line  = tokens[0].line
 
     if not verify_brackets(tokens, LEFT_PAREN, RIGHT_PAREN):
-        err(f"unmatched parentheses, line {line}")
+        util.err(f"unmatched parentheses, line {line}")
     if not verify_brackets(tokens, LEFT_SQUARE, RIGHT_SQUARE):
-        err(f"unmatched square brackets, line {line}")
+        util.err(f"unmatched square brackets, line {line}")
 
     # a single token list can only be a literal value
     if len(tokens) == 1:
-        debug(f"single token", tokens)
+        util.debug(f"single token", tokens)
         if first in (STRING, CHAR, NUMBER, TRUE, FALSE):
             return Expression(EXPR_LITERAL, tokens, line)
         elif first == IDENTIFIER:
             return Expression(EXPR_VARIABLE, tokens, line)
 
-        err(f"expected literal in expression, got '{tokens[0].lexeme}', line {line}")
+        util.err(f"expected literal in expression, got '{tokens[0].lexeme}', line {line}")
 
     # argument expression (comma separated values). check if token list contains any
     # commas since any expression with commas on top level must be an argument expression
@@ -345,7 +328,7 @@ def parse_expression(tokens: list) -> Expression:
             last_idx = idx
 
     if len(arg_split) != 0:
-        debug("arg list", tokens)
+        util.debug("arg list", tokens)
         arg_split.append(tokens[last_idx+1:])
         args = Expression(EXPR_ARGS, tokens, line)
         args.exprs = [parse_expression(e) for e in arg_split]
@@ -373,7 +356,7 @@ def parse_expression(tokens: list) -> Expression:
         # can be present. it must also be a valid unary operator. error is handled
         # when parsing binary
         if op_idx == 0 and num_ops == 1 and first in (MINUS, NOT, BIT_NEGATE):
-            debug("unary", tokens)
+            util.debug("unary", tokens)
             unary = Expression(EXPR_UNARY, tokens, line)
             unary.right = parse_expression(tokens[1:])
             unary.operator = tokens[0]
@@ -381,13 +364,13 @@ def parse_expression(tokens: list) -> Expression:
 
         # if its not a unary its binary. first check if the first or last token is
         # an operator since that would be an invalid expression
-        debug("binary", tokens)
+        util.debug("binary", tokens)
         if op_idx == 0 or op_idx == len(tokens)-1:
             side = "left" if op_idx == 0 else "right"
-            err(f"expected expression on {side} side of '{operator.lexeme}', line {line}")
+            util.err(f"expected expression on {side} side of '{operator.lexeme}', line {line}")
         
         if operator.type in (NOT, BIT_NEGATE):
-            err(f"invalid binary operator '{operator.lexeme}', line {line}")
+            util.err(f"invalid binary operator '{operator.lexeme}', line {line}")
 
         expr = Expression(EXPR_BINARY, tokens, line)
         expr.left  = parse_expression(tokens[:op_idx])
@@ -398,10 +381,10 @@ def parse_expression(tokens: list) -> Expression:
     # group expression. a group cannot be empty. if the remaining tokens do not
     # form a complete group thers either a syntax error or not a group expression
     if seek(tokens, LEFT_PAREN, RIGHT_PAREN) == len(tokens)-1:
-        debug("group", tokens)
+        util.debug("group", tokens)
         inner = parse_expression(tokens[1:len(tokens)-1])
         if inner.type == EXPR_EMPTY:
-            err(f"expected expression in (), line {line}")
+            util.err(f"expected expression in (), line {line}")
 
         group = Expression(EXPR_GROUP, tokens, line)
         group.inner = inner
@@ -409,7 +392,7 @@ def parse_expression(tokens: list) -> Expression:
 
     # array literal, can be empty
     if seek(tokens, LEFT_SQUARE, RIGHT_SQUARE) == len(tokens)-1:
-        debug("array", tokens)
+        util.debug("array", tokens)
         inner = parse_expression(tokens[1:len(tokens)-1])
         array = Expression(EXPR_ARRAY, tokens, line)
         array.inner = inner
@@ -418,10 +401,10 @@ def parse_expression(tokens: list) -> Expression:
     # function call expression, ends with '(args)'
     last = tokens[len(tokens)-1].type
     if last == RIGHT_PAREN:
-        debug("call", tokens)
+        util.debug("call", tokens)
         begin_idx = seek_back(tokens, LEFT_PAREN, RIGHT_PAREN)
         if begin_idx == 0:
-            err(f"expected function expression before args, line {line}")
+            util.err(f"expected function expression before args, line {line}")
 
         call = Expression(EXPR_CALL, tokens, line)
         call.inner = parse_expression(tokens[begin_idx+1:len(tokens)-1])
@@ -432,14 +415,14 @@ def parse_expression(tokens: list) -> Expression:
 
     # array index expression, ends with '[index]'
     elif last == RIGHT_SQUARE:
-        debug("index", tokens)
+        util.debug("index", tokens)
         begin_idx = seek_back(tokens, LEFT_SQUARE, RIGHT_SQUARE)
         if begin_idx == 0:
-            err(f"expected expression before index, line {line}")
+            util.err(f"expected expression before index, line {line}")
 
         inner = parse_expression(tokens[begin_idx+1:len(tokens)-1])
         if inner.type == EXPR_EMPTY:
-            err(f"missing expression as index, line {line}")
+            util.err(f"missing expression as index, line {line}")
 
         index = Expression(EXPR_INDEX, tokens, line)
         index.array = parse_expression(tokens[:begin_idx])
@@ -447,5 +430,5 @@ def parse_expression(tokens: list) -> Expression:
         return index
 
     # fallthrough means invalid expression
-    debug("fallthrough", tokens)
-    err(f"invalid expression, line {line}")
+    util.debug("fallthrough", tokens)
+    util.err(f"invalid expression, line {line}")

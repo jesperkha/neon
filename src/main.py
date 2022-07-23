@@ -5,10 +5,8 @@ import scanner
 import os
 import sys
 
-# util.DEBUG_MODE = True
-
 def compile():
-    args = sys.argv[1:] # omit filename
+    args = sys.argv[1:]
     if len(args) == 0:
         util.err("no input files")
 
@@ -19,11 +17,9 @@ def compile():
         util.err(f"could not find '{filename}'")
 
     with open(filename, "r") as f:
-        ast = parser.parse(lexer.tokenize(f.read()))
-        scanner.scan(ast)
-
-def main():
-    compile()
+        tok = lexer.tokenize(f.read())
+        ast = parser.Parser(tok).parse()
+        scn = scanner.Scanner().scan(ast)
 
 if __name__ == "__main__":
-    main()
+    compile()
