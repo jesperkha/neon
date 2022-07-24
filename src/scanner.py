@@ -226,6 +226,7 @@ class Scanner:
     # Wrapper for the evaluation to return corrected types
     def eval_expr(self, expr: Expression, err_none: bool = False) -> Type:
         typ = self.validate_type(self.eval_expr_wrap(expr))
+        expr.eval_type = typ
         if err_none and typ == TYPE_NONE:
             util.err(f"cannot use {typ} in expression, line {self.line}")
         return typ
@@ -287,10 +288,10 @@ class Scanner:
                 for idx, t in enumerate(types):
                     if t != inner_t:
                         util.err(f"type of index {idx} did not match the first element in array literal; expected {inner_t}, got {t}, line {self.line}")
-                return Type(TYPE_ARRAY, compl="[]", sub_type=inner_t)
+                return Type(TYPE_ARRAY, compl="[]", sub_type=inner_t, length=len(types))
 
             inner_t = self.eval_expr(expr.inner)
-            return Type(TYPE_ARRAY, compl="[]", sub_type=inner_t, empty=inner_t==EXPR_EMPTY)
+            return Type(TYPE_ARRAY, compl="[]", sub_type=inner_t, empty=inner_t==EXPR_EMPTY, length=1)
 
         elif expr.type == EXPR_INDEX:
             arr = self.eval_expr(expr.array)
@@ -357,15 +358,21 @@ class Scanner:
                 if right == TYPE_ARRAY and left != TYPE_ARRAY:
                     if right.sub_type != left:
                         util.err(e.format(right.sub_type, left, self.line))
+
+                    right.length += 1
                     return right
 
                 if right != TYPE_ARRAY and left == TYPE_ARRAY:
                     if left.sub_type != right:
                         util.err(e.format(left.sub_type, right, self.line))
+
+                    left.length += 1
                     return left
 
                 if left != right:
                     util.err(f"mismatched array types in expression; {left} and {right}, line {self.line}")
+
+                left.length += right.length
                 return left
 
             if left == right:

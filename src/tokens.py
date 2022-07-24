@@ -15,20 +15,22 @@ class Token:
         return self.lexeme
 
 class Type:
-    def __init__(self, typ: str, compl: str = "", sub_type = None, negative: bool = False, empty: bool = False):
+    def __init__(self, typ: str, compl: str = "", sub_type = None, negative: bool = False, empty: bool = False, length: int = 64):
         self.type = typ
         self.set_kind()
 
         self.negative = negative
         self.float = self.type in (TYPE_F32, TYPE_FLOAT, TYPE_F64)
 
-        # Complex type name formed after init
-        self.complex = compl
-        self.ctype = ""
-        self.sub_type = sub_type
-        
         # For comparing arrays
         self.empty = empty
+        self.length = length
+        self.max_length = 64
+
+        # Complex type name formed after init
+        self.complex = compl
+        self.ctype = "" if self.type != TYPE_ARRAY else f"[{self.max_length}]"
+        self.sub_type = sub_type
     
     def set_kind(self):
         if self.type in (TYPE_BOOL):
@@ -49,7 +51,9 @@ class Type:
         elif self.sub_type:
             self.sub_type.append_type(t)
         else:
-            self.ctype += "*"
+            if t == TYPE_ARRAY:
+                self.ctype += f"[{self.max_length}]"
+            # Put reference here
             self.sub_type = t
     
     def str(self) -> str:
@@ -103,6 +107,7 @@ class Expression:
         self.array:    Expression = None
         self.callee:   Token = None
         self.operator: Token = None
+        self.eval_type: Type = Type(TYPE_NONE)
 
 class Statement:
     def __init__(self, typ: str, line: int):

@@ -2,11 +2,12 @@ from tokens import *
 import util
 
 type_convertion = {
-        "STRING": "char*",
-        "NONE": "void",
-        "BOOL": "bool",
-        "I32": "int",
-        "F32": "float"
+        TYPE_STRING: "char*",
+        TYPE_CHAR: "char",
+        TYPE_NONE: "void",
+        TYPE_BOOL: "bool",
+        TYPE_I32: "int",
+        TYPE_F32: "float"
 }
 
 symbol_convertion = {
@@ -18,6 +19,7 @@ class Compiler:
         self.string = ""
         self.indent = 0
         self.spaces = 1
+        self.count = 0
 
     def compile(self, ast: list[Statement]) -> str:
         self.stmts(ast)
@@ -54,8 +56,7 @@ class Compiler:
             return
 
         if t == STMT_DECLARE:
-            self.type(stmt.vtype)
-            self.name(stmt.name)
+            self.ctype(stmt)
             self.add("=")
             self.expr(stmt.expr)
             self.semicolon()
@@ -105,25 +106,52 @@ class Compiler:
             return
 
         if t == EXPR_ARRAY:
-            self.add("[")
-            self.add("]")
+            self.add("{")
+            self.expr(expr.inner)
+            self.add("}")
+            return
+
+        if t == EXPR_BINARY:
+            op = expr.operator.type
+            typ = expr.eval_type
+            if op == IN:
+                util.err(f"compilation for {op} operator no implemented")
+
+            if op == PLUS and typ == TYPE_ARRAY:
+                util.err(f"compilation for array addition not implemented")
+            
+            if op == PLUS and typ == TYPE_STRING:
+                self.add("neon_strcat")
+                self.paren_start()
+                self.expr(expr.left)
+                self.add(",", True)
+                self.expr(expr.right)
+                self.paren_end()
+                return
+
+            self.expr(expr.left)
+            self.symbol(expr.operator)
+            self.expr(expr.right)
             return
                 
-        util.err(f"compiling for {t} is not implemented")
+        util.err(f"compilation for {t} is not implemented")
 
 
     def str(self) -> str:
         return self.string[1:]
     
     def autospace(func):
-        def wrap(self, s):
+        def wrap(self, s, no_space: bool = False):
             for n in range(self.spaces):
-                self.string += " "
+                if not no_space: self.string += " "
 
             func(self, s)
             self.spaces = 1
             
         return wrap
+
+    def temp_var(self, name: str) -> str:
+        return f"_temp_{name}_{self.count}"
 
     # Recursives
 
@@ -156,9 +184,14 @@ class Compiler:
             self.string += type_convertion[typ.type]
         elif typ.type == TYPE_ARRAY:
             self.type(typ.sub_type)
-            self.string += typ.ctype
         else:
             self.string += f"ne_{typ}_t"
+
+    @autospace
+    def ctype(self, stmt: Statement):
+        self.type(stmt.vtype)
+        self.name(stmt.name)
+        self.add(stmt.vtype.ctype, True)
         
     @autospace
     def name(self, name: Token):
