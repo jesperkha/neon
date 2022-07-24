@@ -26,6 +26,7 @@ class Scanner:
         # scope must be the same as the function
         self.returned = -1
         self.in_func = False
+        self.has_main = False
 
         # List of dicts to indicate scopes. Higher idx is
         # higher scope. Pops the scope after exiting
@@ -72,6 +73,9 @@ class Scanner:
         for _, f in self.dec_funcs.items():
             if not f.builtin:
                 self.scan_function_body(f)
+
+        if not self.has_main:
+            util.err(f"the 'main' function is required, but was never declared")
 
         return statements
 
@@ -189,7 +193,22 @@ class Scanner:
         return_t = self.validate_type(stmt.vtype)
         stmt.vtype = return_t
         func = Function(stmt.name.lexeme, return_t, stmt.params, stmt.block.stmts)
-        self.dec_funcs[stmt.name.lexeme] = func
+
+        if func.name == "neon_main":
+            util.err(f"function name 'neon_main' is reserved by the compiler and cannot be used, line {self.line}")
+
+        if func.name == "main":
+            if func.return_t != TYPE_NONE:
+                util.err(f"main function cannot have a return type, got {func.return_t}, line {self.line}")
+            if len(func.params) > 0:
+                util.err(f"main function cannot have any parameters, line {self.line}")
+            self.has_main = True
+            #func.name = "neon_main"
+            stmt.name.lexeme = "neon_main"
+            
+        if func.name in self.dec_funcs:
+            util.err(f"function '{func.name}' is already defined, line {self.line}")
+        self.dec_funcs[func.name] = func
 
     def scan_function_body(self, func: Function):
         # Declare params to local scope
