@@ -7,11 +7,22 @@ type_convertion = {
         TYPE_NONE: "void",
         TYPE_BOOL: "bool",
         TYPE_I32: "int",
-        TYPE_F32: "float"
+        TYPE_F32: "float",
+        TYPE_I16: "int16",
+        TYPE_I64: "int64",
+        TYPE_U16: "uint16",
+        TYPE_U32: "uint32",
+        TYPE_U64: "uint64",
+        TYPE_F64: "float64",
 }
 
 symbol_convertion = {
 }
+
+header_template = '''
+// Compiled neon code. See github.com/jesperkha/neon
+#include "neon.h"
+'''
 
 class Compiler:
     def __init__(self):
@@ -22,8 +33,24 @@ class Compiler:
         self.count = 0
 
     def compile(self, ast: list[Statement]) -> str:
+        self.add(header_template)
+        self.newline()
+        self.preprocess(ast)
         self.stmts(ast)
         return self.str()
+    
+    def preprocess(self, ast: list[Statement]):
+        for stmt in ast:
+            if stmt.type == STMT_FUNC:
+                self.type(stmt.vtype)
+                self.name(stmt.name)
+                self.params(stmt.params)
+                self.semicolon()
+            
+            else:
+                util.err(f"preprocessing for {stmt.type} not implemented")
+
+        self.newline()
 
     def stmts(self, ast: list[Statement]):
         for stmt in ast:
