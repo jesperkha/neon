@@ -24,9 +24,7 @@ def err(msg: str):
     exit(1)
 
 def warn(msg: str):
-    pass
-    # Debug: removed warnings
-    #print(f"{text_yellow('warning')}: {msg}")
+    print(f"{text_yellow('warning')}: {msg}")
 
 def interupt(msg: str):
     print(f"{text_green('interupt')}: {msg}")

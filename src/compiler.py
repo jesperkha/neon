@@ -148,13 +148,10 @@ class Compiler:
                 util.err(f"compilation for array addition not implemented")
             
             if op == PLUS and typ == TYPE_STRING:
-                self.add("neon_strcat")
-                self.paren_start()
-                self.expr(expr.left)
-                self.add(",", True)
-                self.expr(expr.right)
-                self.paren_end()
-                return
+                util.err(f"compilation for string addition not implemented")
+
+            if op not in (PLUS, MINUS, SLASH, STAR):
+                util.err(f"compilation for operator '{op}' not implemented")
 
             self.expr(expr.left)
             self.symbol(expr.operator)

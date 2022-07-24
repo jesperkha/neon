@@ -26,11 +26,13 @@ def compile():
         ast = Scanner().scan(ast)
         src = Compiler().compile(ast)
 
+        os.chdir("bin")
+
         with open("main.c", "w") as c:
             c.write(src)
 
         path = f"{pathlib.Path(__file__).parent.parent.absolute()}/lib"
-        os.system(f"gcc -I{path} -o main *.c {path}/stdneon.c")
+        os.system(f"gcc -I{path} -o main *.c {path}/neon.c")
         os.system("./main")
 
 if __name__ == "__main__":
