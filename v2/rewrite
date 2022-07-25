@@ -1,0 +1,64 @@
+
+tokens:
+	Token()
+		.type
+		.lexeme
+		.line
+		.column
+		.isfloat
+
+	Type()
+		.type
+		.kind
+		.name
+		.ctype
+		.subtype
+
+	Expr():
+		.type
+		.line
+		.colrange
+		.name
+		.exprs
+		.left
+		.right
+		.inner
+		.callee
+		.operator
+		.evaltype
+		.mem
+ 
+	Stmt()
+		.type
+		.line
+		.string
+		.name
+		.eval_type
+		.expr
+		.block
+		.params
+		.mems
+
+	MemHandler()
+		.type
+		.isfreed
+
+
+lexer:
+	Lexer()
+		.tokenize() -> []Token
+
+parser:
+	Parser()
+		.parse() -> []Stmt
+
+scanner:
+	TypeScanner()
+		.scan() -> ... 
+	
+	MemScanner()
+		.scan() -> None
+
+compiler:
+	Compiler()
+		.compile() -> str
