@@ -7,9 +7,25 @@ class Token:
         self.isfloat = isfloat
 
 class Type:
-    def __init__(self, typ: str):
+    def __init__(self, typ: str, name: str = ""):
         self.type = typ
-        self.kind = 
+        self.subtype = Type(TYPE_NONE)
+
+        # Set printable name
+        if typ not in (TYPE_ARRAY, TYPE_STRUCT):
+            self.name = typ.lower()
+        elif typ == TYPE_ARRAY:
+            self.name = "[]"
+        elif typ == TYPE_STRUCT:
+            self.name = name
+
+        # Set type kind
+        for key, val in type_to_kind.items():
+            if self.type in val:
+                self.kind = key
+
+        # Set init ctype
+
 
 class Expression:
     def __init__(self):
@@ -102,6 +118,29 @@ STMT_DECLARE = "DECLARATION"
 STMT_ASSIGN  = "ASSIGNMENT"
 STMT_PRINT   = "PRINT"
 
+# Types
+TYPE_NONE   = "NONE"
+TYPE_NULL   = "NULL"
+TYPE_ANY    = "ANY"
+TYPE_STRING = "STRING"
+TYPE_CHAR   = "CHAR"
+TYPE_INT    = "INT"
+TYPE_FLOAT  = "FLOAT"
+TYPE_I8     = "I8"
+TYPE_I16    = "I16"
+TYPE_I32    = "I32"
+TYPE_I64    = "I64"
+TYPE_U8     = "U8"
+TYPE_U16    = "U16"
+TYPE_U32    = "U32"
+TYPE_U64    = "U64"
+TYPE_F32    = "F32"
+TYPE_F64    = "F64"
+TYPE_BOOL   = "BOOL"
+TYPE_FUNC   = "FUNCTION"
+TYPE_ARRAY  = "ARRAY"
+TYPE_STRUCT = "STRUCT"
+
 # Type kinds
 KIND_NONE   = "K_NONE"
 KIND_STRING = "K_STRING"
@@ -155,29 +194,6 @@ type_to_kind = {
     KIND_STRUCT: STRUCT_KINDS,
     KIND_NONE: NONE_KINDS
 }
-
-# Types
-TYPE_NONE   = "NONE"
-TYPE_NULL   = "NULL"
-TYPE_ANY    = "ANY"
-TYPE_STRING = "STRING"
-TYPE_CHAR   = "CHAR"
-TYPE_INT    = "INT"
-TYPE_FLOAT  = "FLOAT"
-TYPE_I8     = "I8"
-TYPE_I16    = "I16"
-TYPE_I32    = "I32"
-TYPE_I64    = "I64"
-TYPE_U8     = "U8"
-TYPE_U16    = "U16"
-TYPE_U32    = "U32"
-TYPE_U64    = "U64"
-TYPE_F32    = "F32"
-TYPE_F64    = "F64"
-TYPE_BOOL   = "BOOL"
-TYPE_FUNC   = "FUNCTION"
-TYPE_ARRAY  = "ARRAY"
-TYPE_STRUCT = "STRUCT"
 
 keyword_lookup = {
     "return": RETURN,
