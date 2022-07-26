@@ -6,6 +6,14 @@ class Token:
         self.column  = col
         self.isfloat = isfloat
 
+class Node:
+    def __init__(self):
+        pass
+    
+class Separator:
+    def __init__(self, *args):
+        self.args = args
+
 class Type:
     def __init__(self, typ: str, name: str = ""):
         self.type = typ
@@ -24,16 +32,6 @@ class Type:
             if self.type in val:
                 self.kind = key
 
-        # Set init ctype
-
-
-class Expression:
-    def __init__(self):
-        pass
-
-class Statement:
-    def __init__(self):
-        pass
 
 _i = 0
 def i():
@@ -97,6 +95,7 @@ NOT           = i()
 REFERENCE     = i()
 
 # Expression types
+EXPR          = "EXPRESSION"
 EXPR_EMPTY    = "EMPTY"
 EXPR_BINARY   = "BINARY"
 EXPR_GROUP    = "GROUP"
@@ -109,7 +108,6 @@ EXPR_VARIABLE = "VARIABLE"
 EXPR_ARGS     = "ARGS"
 
 # Statement types
-STMT_NONE    = "INCOMPLETE_STMT"
 STMT_EXPR    = "EXPR"
 STMT_RETURN  = "RETURN"
 STMT_FUNC    = "FUNCTION"

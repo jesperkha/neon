@@ -9,8 +9,7 @@ def main():
         if util.err_count > 0:
             exit(1)
 
-        for t in tokens:
-            print(t.lexeme)
+        matcher.Matcher(tokens)
 
 if __name__ == "__main__":
     main()
