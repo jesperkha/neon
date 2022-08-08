@@ -28,14 +28,10 @@ class Seek:
 
 # Declaration table. Pattern declarations are stored in seperate object.
 # The table is passed to a matcher along with a set of tokens.
-class DTable:
+class DeclarationTable:
     def __init__(self):
         self.register = {}
         self.default = ""
-
-        self.declare("expr", Any("literal", "group"))
-        self.declare("literal", AnyToken(IDENTIFIER, STRING, CHAR, NUMBER, TRUE, FALSE))
-        self.declare("group", Group(LEFT_PAREN, "expr", RIGHT_PAREN))
         
     def declare(self, name: str, pattern: Pattern):
         if not self.default:
@@ -47,7 +43,7 @@ class DTable:
 
 
 class Matcher:
-    def __init__(self, table: DTable, tokens: list[Token]):
+    def __init__(self, table: DeclarationTable, tokens: list[Token]):
         self.tokens = tokens
         self.table = table
         self.idx = 0
@@ -60,7 +56,7 @@ class Matcher:
             return False
         
         return m
-    
+
     def match_tokens(self, tokens: list[Token]) -> bool:
         return Matcher(self.table, tokens).match()
 

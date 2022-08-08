@@ -1,6 +1,7 @@
 import lexer
 import matcher
 import util
+import syntax
 
 def main():
     with open("main.ne") as f:
@@ -9,8 +10,8 @@ def main():
         if util.err_count > 0:
             exit(1)
 
-        res = matcher.Matcher(matcher.DTable(), tokens).match()
-        print(res)
+        matched = matcher.Matcher(syntax.NeonSyntaxTable(), tokens).match()
+        print(matched)
 
 if __name__ == "__main__":
     main()
