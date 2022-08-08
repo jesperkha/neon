@@ -1,15 +1,9 @@
 from tokens import *
 import util
 
-class Seperator:
-    def __init__(self, *types: int, multiple: bool = False):
-        self.types = types
-        self.multiple = multiple
-
 class Pattern:
-    def __init__(self, *args, sep: Seperator = None):
+    def __init__(self, *args):
         self.args = args
-        self.seperator = sep
 
 class AnyToken(Pattern):
     pass
@@ -23,34 +17,52 @@ class Optional(Pattern):
 class Group:
     def __init__(self, left: int, pattern: Pattern, right: int):
         self.left = left
-        self.pattern = pattern
         self.right = right
+        self.pattern = pattern
 
-class Matcher:
-    def __init__(self, tokens: list[Token]):
+class Seek:
+    def __init__(self, pattern: Pattern, stopper: int):
+        self.pattern = pattern
+        self.stopper = stopper
+
+
+# Declaration table. Pattern declarations are stored in seperate object.
+# The table is passed to a matcher along with a set of tokens.
+class DTable:
+    def __init__(self):
         self.register = {}
-        self.tokens = tokens
-        self.idx = 0
+        self.default = ""
 
-        self.new("group", Group(LEFT_PAREN, "expr", RIGHT_PAREN))
-        self.new("literal", AnyToken(IDENTIFIER, STRING))
-
-        self.new("expr", Any("literal", "group")) 
-
-        self.default_pattern = "expr"
-
-        m = self.match_all()
-        print(m)
-
-    def new(self, name: str, pattern: Pattern):
+        self.declare("expr", Any("literal", "group"))
+        self.declare("literal", AnyToken(IDENTIFIER, STRING, CHAR, NUMBER, TRUE, FALSE))
+        self.declare("group", Group(LEFT_PAREN, "expr", RIGHT_PAREN))
+        
+    def declare(self, name: str, pattern: Pattern):
+        if not self.default:
+            self.default = name
         self.register[name] = pattern
 
-    def match_all(self) -> bool:
-        m = self.matches(self.default_pattern)
+    def get(self, name: str) -> Pattern:
+        return self.register[name]
+
+
+class Matcher:
+    def __init__(self, table: DTable, tokens: list[Token]):
+        self.tokens = tokens
+        self.table = table
+        self.idx = 0
+
+    # Matches the given tokens to the given declaration table.
+    # Returns the result as a bool.
+    def match(self) -> bool:
+        m = self.match_pattern(self.table.default)
         if self.idx < len(self.tokens)-1:
             return False
         
         return m
+    
+    def match_tokens(self, tokens: list[Token]) -> bool:
+        return Matcher(self.table, tokens).match()
 
     # Looks for the given token. Skips segments enclosed in
     # the token pairs listed below. Returns index of token or
@@ -102,34 +114,12 @@ class Matcher:
         return wrap
 
     @reset
-    def matches(self, pattern: Pattern) -> bool:
+    def match_pattern(self, pattern: Pattern) -> bool:
         typ = type(pattern)
-        
-        # If the pattern has a seperator, the token list will
-        # be split the given token types in the seperator tuple.
-        # Each chunk of the split will be matched against the
-        # respective pattern.
-        if typ == Pattern and pattern.seperator:
-            # Todo: redo to support multiple seperators
-            split_idx = self.seek(pattern.seperator.types)
-
-            # A seperator is required if specified, return
-            # false if none is found.
-            if split_idx == -1:
-                return False
-
-            split = (
-                self.tokens[self.idx:split_idx],
-                self.tokens[split_idx+1:len(self.tokens)]
-            )
-
-            # Todo: add recursive check for seperator
-            print("Seperator not implemented")
-            exit()
         
         # Match token type (int) to current token
         # Only iterate index if token was matched
-        elif typ == int:
+        if typ == int:
             if self.tokens[self.idx].type == pattern:
                 self.idx += 1
                 return True
@@ -138,7 +128,7 @@ class Matcher:
 
         # Match registered pattern by name (string)
         elif typ == str:
-            return self.matches(self.register[pattern])
+            return self.match_pattern(self.table.get(pattern))
 
         # Match any of the given token types (int)
         # Only iterate index if token was matched
@@ -156,38 +146,42 @@ class Matcher:
             start_idx = self.idx
             for p in pattern.args:
                 self.idx = start_idx
-                if self.matches(p):
+                if self.match_pattern(p):
                     break
 
             return True
 
         # Match all sub-patterns in given Pattern
-        # Index is automatically iterated by matches()
+        # Index is automatically iterated by match_pattern()
         elif typ == Pattern:
             for p in pattern.args:
-                if not self.matches(p):
+                if not self.match_pattern(p):
                     return False
 
             return True
 
         # Check to see if any pattern matches
-        # Index is automatically iterated by matches()
+        # Index is automatically iterated by match_pattern()
         elif typ == Any:
             for p in pattern.args:
-                if self.matches(p):
+                if self.match_pattern(p):
                     return True
 
             return False
         
+        # Group pattern. Check for left token, seek right
+        # token, and match the token interval between the two.
         elif typ == Group:
             left = self.tokens[self.idx]
             end_idx = self.seek(pattern.right, False)
             if left.type != pattern.left or end_idx == -1:
                 return False
 
-            # Todo: add recursive check for token interval
-            print("group match")
-            exit()
+            m = self.match_tokens(self.tokens[self.idx+1:end_idx])
+            self.idx = end_idx+1
+            return m
+        
+        # Todo: implement Seek
 
         print(f"unknown pattern type: {typ}")
         exit()

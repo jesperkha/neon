@@ -9,7 +9,8 @@ def main():
         if util.err_count > 0:
             exit(1)
 
-        matcher.Matcher(tokens)
+        res = matcher.Matcher(matcher.DTable(), tokens).match()
+        print(res)
 
 if __name__ == "__main__":
     main()
