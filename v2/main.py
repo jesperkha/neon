@@ -11,7 +11,7 @@ def main():
             exit(1)
 
         matched = matcher.Matcher(syntax.NeonSyntaxTable(), tokens).match()
-        print(matched)
+        print(f"\nResult: {matched}")
 
 if __name__ == "__main__":
     main()

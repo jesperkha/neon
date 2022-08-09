@@ -1,6 +1,9 @@
 from tokens import *
 import util
 
+class Empty:
+    pass
+
 class Pattern:
     def __init__(self, *args):
         self.args = args
@@ -25,6 +28,12 @@ class Seek:
         self.pattern = pattern
         self.stopper = stopper
 
+class Split:
+    def __init__(self, left: Pattern, sep: int, right: Pattern):
+        self.left = left
+        self.right = right
+        self.seperator = sep
+
 
 # Declaration table. Pattern declarations are stored in seperate object.
 # The table is passed to a matcher along with a set of tokens.
@@ -43,22 +52,28 @@ class DeclarationTable:
 
 
 class Matcher:
-    def __init__(self, table: DeclarationTable, tokens: list[Token]):
+    def __init__(self, table: DeclarationTable, tokens: list[Token], indent: int = 0):
         self.tokens = tokens
-        self.table = table
         self.idx = 0
+        self.indent = indent
+
+        self.table = table
+        self.default = self.table.default
 
     # Matches the given tokens to the given declaration table.
     # Returns the result as a bool.
-    def match(self) -> bool:
-        m = self.match_pattern(self.table.default)
-        if self.idx < len(self.tokens)-1:
-            return False
-        
-        return m
+    def match(self, pattern: Pattern = None) -> bool:
+        if len(self.tokens) == 0:
+            return type(pattern) == Empty
 
-    def match_tokens(self, tokens: list[Token]) -> bool:
-        return Matcher(self.table, tokens).match()
+        if pattern:
+            self.default = pattern
+
+        m = self.match_pattern(self.default)
+        return False if self.idx != len(self.tokens) else m
+
+    def match_tokens(self, tokens: list[Token], pattern: Pattern) -> bool:
+        return Matcher(self.table, tokens, self.indent).match(pattern)
 
     # Looks for the given token. Skips segments enclosed in
     # the token pairs listed below. Returns index of token or
@@ -103,8 +118,21 @@ class Matcher:
     def reset(func):
         def wrap(self, pattern: Pattern) -> bool:
             start_idx = self.idx
+
+            # Print debug info
+            tab = self.indent * "  "
+            pat_name = type(pattern).__name__ if type(pattern) not in (str, int) else f'"{pattern}"'
+            print(f"{tab}Trying {pat_name}: ", end="")
+            util.print_tokens(self.tokens[start_idx:])
+            self.indent += 1
             m = func(self, pattern)
-            if not m: self.idx = start_idx
+            self.indent -= 1
+
+            if not m:
+                print(f"{tab}Failed: {pat_name}")
+                self.idx = start_idx
+
+            print(f"{tab}Success: {pat_name}")
             return m
         
         return wrap
@@ -114,34 +142,26 @@ class Matcher:
         typ = type(pattern)
         
         # Match token type (int) to current token
-        # Only iterate index if token was matched
+        # Always iterate index (is reset if match fails)
         if typ == int:
-            if self.tokens[self.idx].type == pattern:
-                self.idx += 1
-                return True
-
-            return False
+            self.idx += 1
+            return self.tokens[self.idx-1].type == pattern
 
         # Match registered pattern by name (string)
         elif typ == str:
             return self.match_pattern(self.table.get(pattern))
 
         # Match any of the given token types (int)
-        # Only iterate index if token was matched
+        # Always iterate index (is reset if match fails)
         elif typ == AnyToken:
-            if self.tokens[self.idx].type in pattern.args:
-                self.idx += 1
-                return True
-
-            return False
+            self.idx += 1
+            return self.tokens[self.idx-1].type in pattern.args
 
         # Run matches for each of the optional patterns
         # to ensure that the index is iterated past the
         # optional pattern/token range.
         elif typ == Optional:
-            start_idx = self.idx
             for p in pattern.args:
-                self.idx = start_idx
                 if self.match_pattern(p):
                     break
 
@@ -169,15 +189,26 @@ class Matcher:
         # token, and match the token interval between the two.
         elif typ == Group:
             left = self.tokens[self.idx]
+            # Todo: add optional Group and Seek arg for non-skip
             end_idx = self.seek(pattern.right, False)
             if left.type != pattern.left or end_idx == -1:
                 return False
 
-            m = self.match_tokens(self.tokens[self.idx+1:end_idx])
+            m = self.match_tokens(self.tokens[self.idx+1:end_idx], pattern.pattern)
             self.idx = end_idx+1
             return m
         
-        # Todo: implement Seek
+        # Seeks stopper token and matches the prefix interval
+        elif typ == Seek:
+            end_idx = self.seek(pattern.stopper, False)
+            if end_idx == -1:
+                return False
+
+            m = self.match_tokens(self.tokens[self.idx:end_idx], pattern.pattern)
+            self.idx = end_idx+1
+            return m
+
+        # Todo: implement Split
 
         print(f"unknown pattern type: {typ}")
         exit()
