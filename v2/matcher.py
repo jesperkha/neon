@@ -14,6 +14,9 @@ class AnyToken(Pattern):
 class Any(Pattern):
     pass
 
+class All(Pattern):
+    pass
+
 class Optional(Pattern):
     pass
 
@@ -72,7 +75,7 @@ class Matcher:
         m = self.match_pattern(self.default)
         return False if self.idx != len(self.tokens) else m
 
-    def match_tokens(self, tokens: list[Token], pattern: Pattern) -> bool:
+    def match_tokens(self, tokens: list[Token], pattern: Pattern, consume_all: bool = False) -> bool:
         return Matcher(self.table, tokens, self.indent).match(pattern)
 
     # Looks for the given token. Skips segments enclosed in
@@ -91,21 +94,18 @@ class Matcher:
             if skip:
                 if t in closed:
                     stack.append(closed[t])
-                    idx += 1
-                    continue
                 
-                if len(stack) > 0:
+                elif len(stack) > 0:
                     if t == stack[len(stack)-1]:
                         stack.pop()
-                    idx += 1
-                    continue
 
-            if type(token) == tuple:
-                if t in token:
+            if len(stack) == 0:
+                if type(token) == tuple:
+                    if t in token:
+                        return idx
+
+                if t == token:
                     return idx
-
-            if t == token:
-                return idx
 
             idx += 1
 
@@ -128,9 +128,11 @@ class Matcher:
             m = func(self, pattern)
             self.indent -= 1
 
-            if not m:
+            # If not Pattern, then the tokens should be completely consumed
+            if not m: #or (type(pattern) != Pattern and self.idx != len(self.tokens)):
                 print(f"{tab}Failed: {pat_name}")
                 self.idx = start_idx
+                return False
 
             print(f"{tab}Success: {pat_name}")
             return m
@@ -184,13 +186,26 @@ class Matcher:
                     return True
 
             return False
+
+        # Same as Any but the pattern must consume all remaining
+        # tokens to be valid.
+        elif typ == All:
+            start_idx = self.idx
+            for p in pattern.args:
+                if self.match_pattern(p):
+                    if self.idx == len(self.tokens):
+                        return True
+                
+                self.idx = start_idx
+
+            return False
         
         # Group pattern. Check for left token, seek right
         # token, and match the token interval between the two.
         elif typ == Group:
             left = self.tokens[self.idx]
             # Todo: add optional Group and Seek arg for non-skip
-            end_idx = self.seek(pattern.right, False)
+            end_idx = self.seek(pattern.right)
             if left.type != pattern.left or end_idx == -1:
                 return False
 
@@ -208,7 +223,16 @@ class Matcher:
             self.idx = end_idx+1
             return m
 
-        # Todo: implement Split
+        # Split token list at seperator token and match both sides
+        elif typ == Split:
+            split_idx = self.seek(pattern.seperator)
+            if split_idx == -1:
+                return False
+
+            left = self.match_tokens(self.tokens[self.idx:split_idx], pattern.left)
+            right = self.match_tokens(self.tokens[split_idx+1:], pattern.right)
+            self.idx = len(self.tokens)
+            return left and right
 
         print(f"unknown pattern type: {typ}")
         exit()
