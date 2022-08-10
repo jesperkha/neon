@@ -1,6 +1,6 @@
 <br />
 <div align="center">
-  <img src=".github/logo.svg" alt="Logo" width="150">
+  <img src=".github/logo.svg" alt="Logo" width="100">
 
   <h3 align="center">The Neon programming language</h3>
 
