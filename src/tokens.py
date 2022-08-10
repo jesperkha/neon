@@ -1,125 +1,37 @@
-# Token definitions and data types
-# 
-# This file contains definitions for neons keywords, symbols, and data structures like ASTs.
-# Almost all other parts of the compiler uses this file. The definitions are made as dynamic
-# as possible to make it easy to add or remove tokens, type, or keywords.
-
 class Token:
-    def __init__(self, type: int, lexeme: str, line: int):
+    def __init__(self, typ: int, lexeme: str, line: int, col: int, isfloat: int = False):
+        self.type    = typ
         self.lexeme  = lexeme
         self.line    = line
-        self.type    = type
-        self.isfloat = False
+        self.column  = col
+        self.isfloat = isfloat
+
+class Node:
+    def __init__(self):
+        pass
     
-    def __str__(self) -> str:
-        return self.lexeme
+class Separator:
+    def __init__(self, *args):
+        self.args = args
 
 class Type:
-    def __init__(self, typ: str, compl: str = "", sub_type = None, negative: bool = False, empty: bool = False, length: int = 64):
+    def __init__(self, typ: str, name: str = ""):
         self.type = typ
-        self.set_kind()
+        self.subtype = Type(TYPE_NONE)
 
-        self.negative = negative
-        self.float = self.type in (TYPE_F32, TYPE_FLOAT, TYPE_F64)
+        # Set printable name
+        if typ not in (TYPE_ARRAY, TYPE_STRUCT):
+            self.name = typ.lower()
+        elif typ == TYPE_ARRAY:
+            self.name = "[]"
+        elif typ == TYPE_STRUCT:
+            self.name = name
 
-        # For comparing arrays
-        self.empty = empty
-        self.length = length
-        self.max_length = 64
+        # Set type kind
+        for key, val in type_to_kind.items():
+            if self.type in val:
+                self.kind = key
 
-        # Complex type name formed after init
-        self.complex = compl
-        self.ctype = "" if self.type != TYPE_ARRAY else f"[{self.max_length}]"
-        self.sub_type = sub_type
-    
-    def set_kind(self):
-        if self.type in (TYPE_BOOL):
-            self.kind = KIND_BOOL
-        elif self.type in (TYPE_INT, TYPE_I8, TYPE_I16, TYPE_I32, TYPE_I64, TYPE_U8, TYPE_U16, TYPE_U32, TYPE_U64, TYPE_FLOAT, TYPE_F32, TYPE_F64):
-            self.kind = KIND_NUMBER
-        elif self.type in (TYPE_CHAR, TYPE_STRING):
-            self.kind = KIND_STRING
-        elif self.type == TYPE_ARRAY:
-            self.kind = KIND_ARRAY
-        else:
-            self.kind = KIND_NONE
-
-    def append_type(self, t):
-        if self.type == TYPE_NONE:
-            self.type = t.type
-            self.set_kind()
-        elif self.sub_type:
-            self.sub_type.append_type(t)
-        else:
-            if t == TYPE_ARRAY:
-                self.ctype += f"[{self.max_length}]"
-            # Put reference here
-            self.sub_type = t
-    
-    def str(self) -> str:
-        if self.sub_type:
-            return self.complex + self.sub_type.str()
-
-        return self.type
-
-    def compare_arrays(self, a, b) -> bool:
-        if a.sub_type == b.sub_type:
-            return True
-
-        if a.empty or b.empty:
-            return True
-
-        if (not a.sub_type and b.sub_type) or (a.sub_type and not b.sub_type):
-            return True
-
-        if a.sub_type == b.sub_type == TYPE_ARRAY:
-            return self.compare_arrays(a.sub_type, b.sub_type)
-
-        return a.str() == b.str()
-
-    def __eq__(self, o: object) -> bool:
-        if type(o) == str: # allow checking for type constant
-            return self.type == o
-
-        if TYPE_ANY in (self.type, o.type):
-            return True
-
-        if self.type == TYPE_ARRAY and o.type == TYPE_ARRAY:
-            return self.compare_arrays(self, o)
-
-        return self.str() == o.str()
-    
-    def __bool__(self) -> bool:
-        return self.type != TYPE_NONE
-
-    def __str__(self) -> str:
-        return self.str().lower()
-
-class Expression:
-    def __init__(self, typ: str, tokens: list, line: int):
-        self.type = typ
-        self.line = line
-        self.tokens = tokens
-        self.exprs:    list[Expression] = None
-        self.left:     Expression = None
-        self.right:    Expression = None
-        self.inner:    Expression = None
-        self.array:    Expression = None
-        self.callee:   Token = None
-        self.operator: Token = None
-        self.eval_type: Type = Type(TYPE_NONE)
-
-class Statement:
-    def __init__(self, typ: str, line: int):
-        self.type  = typ
-        self.line  = line
-        self.expr: Expression = None
-        self.block: Statement = None
-        self.name: Token = None
-        self.vtype: Type = Type(TYPE_NONE)
-        self.stmts: list = []
-        # list of tuple(name, Type)
-        self.params: list = []
 
 _i = 0
 def i():
@@ -128,6 +40,7 @@ def i():
     return _i
 
 # Token types
+NULL          = i()
 IDENTIFIER    = i()
 TRUE          = i()
 FALSE         = i()
@@ -155,7 +68,7 @@ RIGHT_SQUARE  = i()
 RETURN        = i()
 FUNC          = i()
 
-# Binary expression tokens in order of precedency
+# Binary operators in order of precedency
 AND           = i()
 OR            = i()
 EQUAL_EQUAL   = i()
@@ -174,11 +87,15 @@ BIT_OR        = i()
 BIT_XOR       = i()
 BIT_AND       = i()
 BIT_LSHIFT    = i()
+
+# Unary operators in order of precedency
 BIT_RSHIFT    = i()
 BIT_NEGATE    = i()
 NOT           = i()
+REFERENCE     = i()
 
 # Expression types
+EXPR          = "EXPRESSION"
 EXPR_EMPTY    = "EMPTY"
 EXPR_BINARY   = "BINARY"
 EXPR_GROUP    = "GROUP"
@@ -191,7 +108,6 @@ EXPR_VARIABLE = "VARIABLE"
 EXPR_ARGS     = "ARGS"
 
 # Statement types
-STMT_NONE    = "UNCOMPLETE_STMT"
 STMT_EXPR    = "EXPR"
 STMT_RETURN  = "RETURN"
 STMT_FUNC    = "FUNCTION"
@@ -200,15 +116,9 @@ STMT_DECLARE = "DECLARATION"
 STMT_ASSIGN  = "ASSIGNMENT"
 STMT_PRINT   = "PRINT"
 
-# Type kinds
-KIND_NONE   = "K_NONE"
-KIND_STRING = "K_STRING"
-KIND_NUMBER = "K_NUMBER"
-KIND_BOOL   = "K_BOOL"
-KIND_ARRAY  = "K_ARRAY"
-
 # Types
 TYPE_NONE   = "NONE"
+TYPE_NULL   = "NULL"
 TYPE_ANY    = "ANY"
 TYPE_STRING = "STRING"
 TYPE_CHAR   = "CHAR"
@@ -225,12 +135,63 @@ TYPE_U64    = "U64"
 TYPE_F32    = "F32"
 TYPE_F64    = "F64"
 TYPE_BOOL   = "BOOL"
-TYPE_USRDEF = "USER_DEFINED"
 TYPE_FUNC   = "FUNCTION"
 TYPE_ARRAY  = "ARRAY"
+TYPE_STRUCT = "STRUCT"
 
-# TYPE_INT is also in this collection to include number literals (negatives checked at runtime)
-COLLECTION_UNSIGNED = (TYPE_INT, TYPE_U8, TYPE_U16, TYPE_U32, TYPE_U64)
+# Type kinds
+KIND_NONE   = "K_NONE"
+KIND_STRING = "K_STRING"
+KIND_NUMBER = "K_NUMBER"
+KIND_BOOL   = "K_BOOL"
+KIND_ARRAY  = "K_ARRAY"
+KIND_STRUCT = "K_STRUCT"
+
+NUMBER_KINDS = (
+    TYPE_INT,
+    TYPE_I8,
+    TYPE_I16,
+    TYPE_I32,
+    TYPE_I64,
+    TYPE_U8,
+    TYPE_U16,
+    TYPE_U32,
+    TYPE_U64,
+    TYPE_FLOAT,
+    TYPE_F32,
+    TYPE_F64
+)
+
+STRING_KINDS = (
+    TYPE_STRING,
+    TYPE_CHAR
+)
+
+BOOL_KINDS = (
+    TYPE_BOOL
+)
+
+ARRAY_KINDS = (
+    TYPE_ARRAY
+)
+
+STRUCT_KINDS = (
+    TYPE_STRUCT
+)
+
+NONE_KINDS = (
+    TYPE_NONE,
+    TYPE_NULL
+)
+
+type_to_kind = {
+    KIND_NUMBER: NUMBER_KINDS,
+    KIND_STRING: STRUCT_KINDS,
+    KIND_BOOL: BOOL_KINDS,
+    KIND_ARRAY: ARRAY_KINDS,
+    KIND_STRUCT: STRUCT_KINDS,
+    KIND_NONE: NONE_KINDS
+}
 
 keyword_lookup = {
     "return": RETURN,
@@ -238,6 +199,7 @@ keyword_lookup = {
     "true":   TRUE,
     "false":  FALSE,
     "in":     IN,
+    "null":   NULL
 }
 
 typeword_lookup = {
@@ -276,10 +238,10 @@ symbol_lookup = {
     "<": LESS,
     ",": COMMA,
     ":": COLON,
-    "&": BIT_AND,
-    "|": BIT_OR,
-    "~": BIT_NEGATE,
-    "^": BIT_XOR,
+    # "&": BIT_AND,
+    # "|": BIT_OR,
+    # "~": BIT_NEGATE,
+    # "^": BIT_XOR,
 }
 
 double_token_lookup = {
@@ -291,19 +253,12 @@ double_token_lookup = {
     "||": OR,
     ":=": COLON_EQUAL,
     "//": COMMENT,
-    ">>": BIT_RSHIFT,
-    "<<": BIT_LSHIFT,
+    # ">>": BIT_RSHIFT,
+    # "<<": BIT_LSHIFT,
 }
 
 whitespace_lookup = {
     " ": SPACE,
     "\n": NEWLINE,
     "\t": TAB
-}
-
-binary_op_combos = {
-        KIND_NUMBER: (PLUS, MINUS, STAR, SLASH, MODULO, NOT_EQUAL, EQUAL_EQUAL, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL),
-    KIND_STRING: (PLUS, NOT_EQUAL, EQUAL_EQUAL),
-    KIND_ARRAY: (PLUS, NOT_EQUAL, EQUAL_EQUAL),
-    KIND_BOOL: (AND, OR, EQUAL_EQUAL, NOT_EQUAL),
 }
