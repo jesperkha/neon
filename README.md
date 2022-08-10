@@ -29,4 +29,4 @@ If you like the project, consider giving it a star 😉
 
 ## Documentation
 
-As of now the documentation is not completed as the language is still a work in progress, but there is a [language documentation](docs/lang.md) file you can look at if interested.
+The language is not yet completed, but the overall design is currently being finalized. You can [check it out here.](docs/lang.md)
