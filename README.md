@@ -1,13 +1,13 @@
 <br />
 <div align="center">
-  <img src=".github/logo.svg" alt="Logo" width="130">
+  <img src=".github/logo.svg" alt="Logo" width="150">
 
-  <h3 align="center">A modern C-like language</h3>
+  <h3 align="center">The Neon programming language</h3>
 
   <p align="center">
-    Neon is a statically typed transpiled language inspired
+    Neon is a statically typed transpiled language that
     <br>
-    by more modern languages such as Rust and Go.
+    tries to mimic the simplicity of C, but in a more modern way.
     <br />
     <a href="https://github.com/jesperkha/neon/blob/main/docs/lang.md">Documentation</a>
     •
@@ -21,9 +21,9 @@
 
 ## About
 
-Neon is a statically typed language that transpiles to C. It is inspired by more modern languages like Rust and Go and has features that adhere to a more functional style of programming. Neons compiler ensures that no undefined C behaviour can occur and will generate template error handlers for unsafe and error-prone code. There are no object oriended features like classes and data is abstracted as little as possible. Neon also has its own statements for common bit manipulation and operations, making it easier to work with low level data.
+Neon is a statically typed language that transpiles to C. The compiler ensures that no undefined C behaviour can occur and will generate template error handlers for unsafe and error-prone code. There are no object oriended features like classes, and data is abstracted as little as possible. Neon aims to be a simple, but powerful language that can interact with C codebases and give a more pleasant user experience. Goodbye segfaults 👋
 
-You can check out the [project status](changelog.md) as well as [feature ideas](ideas.md) that will be added. If you have any recommendations for language features please feel free to create an issue.
+You can check out the [project status](changelog.md) as well as [feature ideas](ideas.md) that may be added. If you have any recommendations for language features please feel free to create an issue.
 
 If you like the project, consider giving it a star 😉
 
