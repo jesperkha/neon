@@ -14,7 +14,7 @@ class AnyToken(Pattern):
 class Any(Pattern):
     pass
 
-class All(Pattern):
+class AnyConsume(Pattern):
     pass
 
 class Optional(Pattern):
@@ -59,6 +59,7 @@ class Matcher:
         self.tokens = tokens
         self.idx = 0
         self.indent = indent
+        self.ispattern = False
 
         self.table = table
         self.default = self.table.default
@@ -128,8 +129,7 @@ class Matcher:
             m = func(self, pattern)
             self.indent -= 1
 
-            # If not Pattern, then the tokens should be completely consumed
-            if not m: #or (type(pattern) != Pattern and self.idx != len(self.tokens)):
+            if not m or (not self.ispattern and self.idx != len(self.tokens)):
                 print(f"{tab}Failed: {pat_name}")
                 self.idx = start_idx
                 return False
@@ -172,6 +172,7 @@ class Matcher:
         # Match all sub-patterns in given Pattern
         # Index is automatically iterated by match_pattern()
         elif typ == Pattern:
+            self.ispattern = True
             for p in pattern.args:
                 if not self.match_pattern(p):
                     return False
@@ -189,7 +190,7 @@ class Matcher:
 
         # Same as Any but the pattern must consume all remaining
         # tokens to be valid.
-        elif typ == All:
+        elif typ == AnyConsume:
             start_idx = self.idx
             for p in pattern.args:
                 if self.match_pattern(p):
