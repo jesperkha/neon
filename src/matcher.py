@@ -74,7 +74,12 @@ class Matcher:
             self.default = pattern
 
         m = self.match_pattern(self.default)
-        return False if self.idx != len(self.tokens) else m
+        n = False if self.idx != len(self.tokens) else m
+        if not n:
+            # Todo: implement error stack and error message lookup in dtable
+            first, last = self.tokens[0], self.tokens[len(self.tokens)-1]
+            util.Error(pattern, first.line, first.column, last.column+1, first.string).print()
+        return n
 
     def match_tokens(self, tokens: list[Token], pattern: Pattern, consume_all: bool = False) -> bool:
         return Matcher(self.table, tokens, self.indent).match(pattern)
@@ -123,18 +128,18 @@ class Matcher:
             # Print debug info
             tab = self.indent * "  "
             pat_name = type(pattern).__name__ if type(pattern) not in (str, int) else f'"{pattern}"'
-            print(f"{tab}Trying {pat_name}: ", end="")
-            util.print_tokens(self.tokens[start_idx:])
+            # print(f"{tab}Trying {pat_name}: ", end="")
+            # util.print_tokens(self.tokens[start_idx:])
             self.indent += 1
             m = func(self, pattern)
             self.indent -= 1
 
             if not m or (not self.ispattern and self.idx != len(self.tokens)):
-                print(f"{tab}Failed: {pat_name}")
+                # print(f"{tab}Failed: {pat_name}")
                 self.idx = start_idx
                 return False
 
-            print(f"{tab}Success: {pat_name}")
+            # print(f"{tab}Success: {pat_name}")
             return m
         
         return wrap

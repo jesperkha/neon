@@ -1,10 +1,11 @@
 class Token:
-    def __init__(self, typ: int, lexeme: str, line: int, col: int, isfloat: int = False):
+    def __init__(self, typ: int, lexeme: str, line: int, col: int, string: str, isfloat: int = False):
         self.type    = typ
         self.lexeme  = lexeme
         self.line    = line
         self.column  = col
         self.isfloat = isfloat
+        self.string  = string
 
 class Node:
     def __init__(self):

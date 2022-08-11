@@ -142,7 +142,10 @@ class Lexer:
 
     # Adds a token to the list
     def add(self, typ: int, lexeme: str, line: int, col: int, isfloat: int = False):
-        self.tokens.append(Token(typ, lexeme, line, col, isfloat))
+        n = (self.idx, self.string, self.col)
+        self.word(lambda _: True)
+        self.tokens.append(Token(typ, lexeme, line, col, self.string, isfloat))
+        self.idx, self.string, self.col = n
 
     # Go forward one character, returns character
     def next(self) -> str:
@@ -172,7 +175,7 @@ class Lexer:
 
     # Add rest of line to self.string before printing error
     def err(self, msg: str, start_col: int, end_col: int, fatal: bool = False):
-        self.word(lambda _: False)
+        self.word(lambda _: True)
         util.err(msg, self.string, start_col, end_col, fatal)
         self.skip_line()
 
