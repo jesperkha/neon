@@ -1,5 +1,8 @@
 err_count = 0
 
+def red(text: str) -> str:
+    return f"\033[91m{text}\033[0m"
+
 class Error:
     def __init__(self, msg: str, line: int, start: int, end: int, string: str, fatal: bool = False):
         self.msg = msg
@@ -11,23 +14,24 @@ class Error:
 
     def print(self):
         print(f"{red('error:')} {self.msg}, line {self.line}")
-        print(f" {self.line} | " + self.string.replace("\n", "\\"))
+        print(f" {self.line} | " + self.string.replace("\n", ""))
         print(f" {len(str(self.line))*' '} | " + red(" "*self.start + "^"*(self.end-self.start)))
         print()
 
+class ErrorStack:
+    def __init__(self):
+        self.errors = []
 
-def red(text: str) -> str:
-    return f"\033[91m{text}\033[0m"
+    def print(self):
+        for e in self.errors:
+            e.print()
+        if len(self.errors) > 0:
+            exit(1)
 
-def err(msg: str, line: str, start: int, end: int, fatal: bool = False):
-    print("Compilation failed")
-    print("| " + line.replace("\n", "\\"))
-    print("| " + red(" "*start + "^"*(end-start)))
-    print("> " + f"{red('error:')} {msg}")
-    print()
-    if fatal: exit(1)
-    global err_count
-    err_count += 1
+    def add(self, err: Error):
+        self.errors.append(err)
+        if err.fatal:
+            self.print()
 
 def print_tokens(tokens: list):
     for t in tokens:

@@ -10,6 +10,8 @@ class Lexer:
         self.idx  = -1
         self.string = ""
 
+        self.errstack = util.ErrorStack()
+
     def tokenize(self) -> list[Token]:
         while self.idx < len(self.source) - 1:
             char = self.next()
@@ -35,7 +37,7 @@ class Lexer:
                 string, not_terminated = self.word(lambda c: c != start_char)
 
                 if not_terminated:
-                    self.err(f"unterminated string, line {self.line}", start_col, self.col+1)
+                    self.err(f"unterminated string", start_col, self.col+1)
                     continue
 
                 self.string += self.next()
@@ -44,7 +46,7 @@ class Lexer:
                 # Char
                 if start_char == "'":
                     if len(string) != 3:
-                        self.err(f"char type must be one character long, line {self.line}", start_col, self.col)
+                        self.err(f"char type must be one character long", start_col, self.col)
                         continue
 
                     self.add(CHAR, string, self.line, start_col)
@@ -86,11 +88,11 @@ class Lexer:
                 dots = number.count(".")
 
                 if dots > 1 or number.endswith(".") or number.startswith("."):
-                    self.err(f"invalid number literal, line {self.line}", start_col, self.col)
+                    self.err(f"invalid number literal", start_col, self.col)
                     continue
 
                 if not number.replace(".", "").isdecimal():
-                    self.err(f"cannot start variable name with number, line {self.line}", start_col, self.col)
+                    self.err(f"cannot start variable name with number", start_col, self.col)
                     continue
 
                 isfloat = dots == 1
@@ -98,7 +100,7 @@ class Lexer:
                 continue
             
             if char == "." and nextchar.isdecimal():
-                self.err(f"number literal cannot start with a '.', line {self.line}", self.col, self.col+1)
+                self.err(f"number literal cannot start with a '.'", self.col, self.col+1)
                 continue
 
             # Keywords and identifiers
@@ -117,8 +119,9 @@ class Lexer:
                 continue
 
             # Fatal: invalid character
-            self.err(f"unexpected token {char}, line {self.line}", self.col, self.col+1)
+            self.err(f"unexpected token '{char}'", self.col, self.col+1)
 
+        self.errstack.print()
         return self.tokens
 
     # Seeks a character that does not satisfy the given end function (returns false).
@@ -176,6 +179,6 @@ class Lexer:
     # Add rest of line to self.string before printing error
     def err(self, msg: str, start_col: int, end_col: int, fatal: bool = False):
         self.word(lambda _: True)
-        util.err(msg, self.string, start_col, end_col, fatal)
+        self.errstack.add(util.Error(msg, self.line, start_col, end_col, self.string, fatal))
         self.skip_line()
 

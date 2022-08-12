@@ -43,16 +43,20 @@ class Split:
 class DeclarationTable:
     def __init__(self):
         self.register = {}
+        self.errmsgs = {}
         self.default = ""
         
-    def declare(self, name: str, pattern: Pattern):
+    def declare(self, name: str, pattern: Pattern, err: str = None):
         if not self.default:
             self.default = name
         self.register[name] = pattern
+        self.errmsgs[name] = err if err else f"expected {name}"
 
     def get(self, name: str) -> Pattern:
         return self.register[name]
 
+    def err(self, pattern: str) -> str:
+        return self.errmsgs[pattern]
 
 class Matcher:
     def __init__(self, table: DeclarationTable, tokens: list[Token], indent: int = 0):
@@ -63,6 +67,8 @@ class Matcher:
 
         self.table = table
         self.default = self.table.default
+
+        self.errstack = util.ErrorStack()
 
     # Matches the given tokens to the given declaration table.
     # Returns the result as a bool.
@@ -78,7 +84,7 @@ class Matcher:
         if not n:
             # Todo: implement error stack and error message lookup in dtable
             first, last = self.tokens[0], self.tokens[len(self.tokens)-1]
-            util.Error(pattern, first.line, first.column, last.column+1, first.string).print()
+            self.errstack.add(util.Error(self.table.err(self.default), first.line, first.column, last.column+1, first.string, True))
         return n
 
     def match_tokens(self, tokens: list[Token], pattern: Pattern, consume_all: bool = False) -> bool:
@@ -106,8 +112,8 @@ class Matcher:
                         stack.pop()
 
             if len(stack) == 0:
-                if type(token) == tuple:
-                    if t in token:
+                if type(token) == AnyToken:
+                    if t in token.args:
                         return idx
 
                 if t == token:
