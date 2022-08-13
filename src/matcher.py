@@ -37,6 +37,10 @@ class Split:
         self.right = right
         self.seperator = sep
 
+class SplitMany:
+    def __init__(self, pattern: Pattern, sep: int):
+        self.pattern = pattern
+        self.seperator = sep
 
 # Declaration table. Pattern declarations are stored in seperate object.
 # The table is passed to a matcher along with a set of tokens.
@@ -79,13 +83,14 @@ class Matcher:
         if pattern:
             self.default = pattern
 
-        m = self.match_pattern(self.default)
-        n = False if self.idx != len(self.tokens) else m
-        if not n:
-            # Todo: implement error stack and error message lookup in dtable
+        # If the pattern doesnt match, or the token list was not fully consumed
+        if not self.match_pattern(self.default) or self.idx != len(self.tokens):
             first, last = self.tokens[0], self.tokens[len(self.tokens)-1]
-            self.errstack.add(util.Error(self.table.err(self.default), first.line, first.column, last.column+1, first.string, True))
-        return n
+            start, end = first.column, last.column+len(last.lexeme)
+            self.errstack.add(util.Error(self.table.err(self.default), first.line, start, end, first.string, True))
+            return False
+
+        return True
 
     def match_tokens(self, tokens: list[Token], pattern: Pattern, consume_all: bool = False) -> bool:
         return Matcher(self.table, tokens, self.indent).match(pattern)
@@ -134,18 +139,18 @@ class Matcher:
             # Print debug info
             tab = self.indent * "  "
             pat_name = type(pattern).__name__ if type(pattern) not in (str, int) else f'"{pattern}"'
-            # print(f"{tab}Trying {pat_name}: ", end="")
-            # util.print_tokens(self.tokens[start_idx:])
+            print(f"{tab}Trying {pat_name}: ", end="")
+            util.print_tokens(self.tokens[start_idx:])
             self.indent += 1
             m = func(self, pattern)
             self.indent -= 1
 
             if not m or (not self.ispattern and self.idx != len(self.tokens)):
-                # print(f"{tab}Failed: {pat_name}")
+                print(f"{tab}Failed: {pat_name}")
                 self.idx = start_idx
                 return False
 
-            # print(f"{tab}Success: {pat_name}")
+            print(f"{tab}Success: {pat_name}")
             return m
         
         return wrap
@@ -240,11 +245,20 @@ class Matcher:
             split_idx = self.seek(pattern.seperator)
             if split_idx == -1:
                 return False
-
-            left = self.match_tokens(self.tokens[self.idx:split_idx], pattern.left)
-            right = self.match_tokens(self.tokens[split_idx+1:], pattern.right)
+            
+            left = self.tokens[self.idx:split_idx]
+            right = self.tokens[split_idx+1:]
+            if len(left) == 0 or len(right) == 0:
+                return False
+            
+            l = self.match_tokens(left, pattern.left)
+            r = self.match_tokens(right, pattern.right)
             self.idx = len(self.tokens)
-            return left and right
+            return l and r
+
+        # Todo: implement SplitMany
+        elif typ == SplitMany:
+            pass
 
         print(f"unknown pattern type: {typ}")
         exit()

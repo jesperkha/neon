@@ -46,7 +46,7 @@ class Lexer:
                 # Char
                 if start_char == "'":
                     if len(string) != 3:
-                        self.err(f"char type must be one character long", start_col, self.col)
+                        self.err(f"char type must be one character long", start_col, self.col+1)
                         continue
 
                     self.add(CHAR, string, self.line, start_col)
