@@ -16,12 +16,12 @@ class Parser:
     def parse(self) -> AstNode:
         return self.ast
 
-    # Parses single statement from Parsers token list
+    # Parses single statement
     def stmt(self) -> Stmt:
         pass
 
-    # Parses single expression from token interval [self.idx:end_idx]
-    def expr(self, end_idx: int) -> Expr:
+    # Parses single expression
+    def expr(self) -> Expr:
         pass
 
     # ----------------------- STACK ------------------------------
@@ -71,7 +71,7 @@ class Parser:
     def split(self, tok: int):
         pass
 
-    # Same as split but can be more than one split
+    # Same as split, but can have multiple split points
     def split_many(self, tok: int):
         pass
 
