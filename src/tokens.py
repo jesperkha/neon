@@ -61,8 +61,8 @@ COMMA         = i()
 
 LEFT_PAREN    = i()
 RIGHT_PAREN   = i()
-LEFT_BRACE    = i()
-RIGHT_BRACE   = i()
+LEFT_BRACE    = i() # 18
+RIGHT_BRACE   = i() # 19
 LEFT_SQUARE   = i()
 RIGHT_SQUARE  = i()
 

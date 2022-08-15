@@ -20,6 +20,10 @@ class AnyConsume(Pattern):
 class Optional(Pattern):
     pass
 
+class List:
+    def __init__(self, pattern: Pattern):
+        self.pattern = pattern
+
 class Group:
     def __init__(self, left: int, pattern: Pattern, right: int):
         self.left = left
@@ -60,6 +64,9 @@ class DeclarationTable:
         return self.register[name]
 
     def err(self, pattern: str) -> str:
+        if type(pattern) !=str:
+            print(type(pattern))
+            return "none"
         return self.errmsgs[pattern]
 
 class Matcher:
@@ -67,7 +74,9 @@ class Matcher:
         self.tokens = tokens
         self.idx = 0
         self.indent = indent
+
         self.ispattern = False
+        self.isany = False
 
         self.table = table
         self.default = self.table.default
@@ -87,7 +96,7 @@ class Matcher:
         if not self.match_pattern(self.default) or self.idx != len(self.tokens):
             first, last = self.tokens[0], self.tokens[len(self.tokens)-1]
             start, end = first.column, last.column+len(last.lexeme)
-            self.errstack.add(util.Error(self.table.err(self.default), first.line, start, end, first.string, True))
+            self.errstack.add(util.Error(self.table.err(self.default), first.line, start, end, first.string, False))
             return False
 
         return True
@@ -198,6 +207,7 @@ class Matcher:
         # Check to see if any pattern matches
         # Index is automatically iterated by match_pattern()
         elif typ == Any:
+            self.isany = True
             for p in pattern.args:
                 if self.match_pattern(p):
                     return True
@@ -255,6 +265,16 @@ class Matcher:
             r = self.match_tokens(right, pattern.right)
             self.idx = len(self.tokens)
             return l and r
+
+        # Match against token list until a pattern fails.
+        # The given pattern should have a definite end
+        elif typ == List:
+            while self.idx < len(self.tokens):
+                matched = self.match_pattern(pattern.pattern)
+                if not matched:
+                    return False
+
+            return True
 
         # Todo: implement SplitMany
         elif typ == SplitMany:

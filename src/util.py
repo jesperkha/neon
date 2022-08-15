@@ -1,5 +1,3 @@
-err_count = 0
-
 def red(text: str) -> str:
     return f"\033[91m{text}\033[0m"
 
@@ -32,6 +30,9 @@ class ErrorStack:
         self.errors.append(err)
         if err.fatal:
             self.print()
+
+    def pop(self):
+        self.errors.pop()
 
 def print_tokens(tokens: list):
     for t in tokens:
