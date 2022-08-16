@@ -3,6 +3,7 @@ from tokens import *
 class AstNode:
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
+        self.stmts = []
 
 class Stmt(AstNode):
     pass
@@ -21,3 +22,11 @@ class ExprStmt(Stmt):
 class Literal(Expr):
     def __init__(self, tok: Token):
         self.token = tok
+
+class Variable(Expr):
+    def __init__(self, tok: Token):
+        self.token = tok
+
+class Group(Expr):
+    def __init__(self, inner: Expr):
+        self.inner = inner

@@ -21,8 +21,9 @@ class Parser:
     # Parses token list. Returns AST. Exits on error
     def parse(self) -> AstNode:
         while self.idx < self.len:
-            self.stmt()
+            self.ast.stmts.append(self.stmt())
 
+        self.errstack.print()
         return self.ast
 
     # Parses single statement
@@ -32,12 +33,32 @@ class Parser:
 
         # Fallthrough is expression statement
         self.add(self.seek(NEWLINE))
-        self.expr()
+        expr = self.expr()
         self.pop()
+        return ExprStmt(expr)
 
     # Parses single expression
     def expr(self) -> Expr:
-        pass
+        if self.len == 0:
+            self.err("empty expression")
+
+        t = self.current.type
+
+        # Literal or variable expression
+        if self.len == 1:
+            if t == IDENTIFIER:
+                return Variable(self.current)
+
+            return Literal(self.current)
+        
+        # Group expression
+        if (inner := self.group(LEFT_PAREN, RIGHT_PAREN)) and self.eof:
+            self.add(inner)
+            expr = self.expr()
+            self.pop()
+            return Group(expr)
+
+        self.err(f"invalid expression")
 
     # ----------------------- STACK ----------------------- 
 
@@ -133,6 +154,10 @@ class Parser:
         while self.idx < self.len:
             t = self.current.type
 
+            if len(closers) == 0 and t == end_t:
+                self.next() # consume end token
+                return interval
+
             # If a closing bracket is found before an opening
             if len(closers) == 0:
                 for _, v in pairs.items():
@@ -147,10 +172,6 @@ class Parser:
 
             if len(closers) > 0 and t == closers[len(closers)-1]:
                 closers.pop()
-
-            if len(closers) == 0 and t == end_t:
-                self.next() # consume end token
-                return interval
             
             interval.append(self.current)
             self.next()
@@ -172,9 +193,19 @@ class Parser:
     def optional(self, tok: int):
         pass
     
-    # Parses expression between left and right tokens
-    def group(self, left: int, right: int):
-        pass
+    # Returns token interval between left and right tokens.
+    # Empty list on failure (falsy). Consumes tokens if valid
+    def group(self, left: int, right: int) -> list[Token]:
+        start_idx = self.idx
+        if self.current.type != left:
+            return []
+
+        self.next()
+        interval = self.seek(right)
+        if not interval:
+            self.idx = start_idx
+
+        return interval
 
     # Parses expressions on left and right of tok
     def split(self, tok: int):
