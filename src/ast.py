@@ -10,5 +10,14 @@ class Stmt(AstNode):
 class Expr(AstNode):
     pass
 
+# ------------ STATEMENTS ------------ 
+
+class ExprStmt(Stmt):
+    def __init__(self, expr: Expr):
+        self.expr = expr
+
+# ----------- EXPRESSIONS ------------
+
 class Literal(Expr):
-    pass
+    def __init__(self, tok: Token):
+        self.token = tok

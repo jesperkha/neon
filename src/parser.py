@@ -10,42 +10,63 @@ class Parser:
         # Current token list that is being parsed. Expressions usually
         # have recursive calls so a token list stack gives depth without
         # recursion and creating multiple objects.
-        self.curlist = [tokens]
+        self.list = [tokens]
+        # List of indecies from token stack
+        self.idxs = [0]
+        # Index of current token list (always last)
+        self.ptr = 0
 
     # Parses token list. Returns AST. Exits on error
     def parse(self) -> AstNode:
+        while self.idx() < self.len():
+            self.stmt()
+
         return self.ast
 
     # Parses single statement
     def stmt(self) -> Stmt:
-        pass
+        self.expr()
 
     # Parses single expression
     def expr(self) -> Expr:
-        pass
+        util.print_tokens(self.tokens()[self.idx():]) # Debug
+        self.next()
 
-    # ----------------------- STACK ------------------------------
+    # ----------------------- STACK ----------------------- 
 
     # The parser uses a stack to control which tokens are currently being parsed.
     # This architecture allows generic helper methods to be used for any expression
     # or statement. It also handles iteration and nesting in the background.
 
     def add(self, tokens: list[Token]):
-        pass
+        self.list.append(tokens)
+        self.idxs.append(0)
+        self.ptr += 1
 
     def pop(self):
-        pass
+        self.list.pop()
+        self.idxs.pop()
+        self.ptr -= 1
 
-    def current(self) -> int:
-        pass
+    def current(self) -> Token:
+        return self.tokens()[self.idx()]
 
-    def next(self) -> int:
-        pass
+    def next(self):
+        self.idxs[self.ptr] += 1
+
+    def set(self, idx: int):
+        self.idxs[self.ptr] = idx
 
     def idx(self) -> int:
-        pass
+        return self.idxs[self.ptr]
 
-    # ---------------------- HELPERS -----------------------------
+    def len(self) -> int:
+        return len(self.tokens())
+
+    def tokens(self) -> list[Token]:
+        return self.list[self.ptr]
+
+    # ---------------------- HELPERS ----------------------
 
     # Expects and consumes single token
     def expect(self, tok: int):
@@ -56,7 +77,7 @@ class Parser:
         pass
 
     # Any of the given tokens are valid
-    def any(self, args*):
+    def any(self, *args):
         pass
 
     # Consumes token if present
