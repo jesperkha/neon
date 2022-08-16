@@ -3,7 +3,7 @@ class Token:
         self.type    = typ
         self.lexeme  = lexeme
         self.line    = line
-        self.column  = col
+        self.col  = col
         self.isfloat = isfloat
         self.string  = string
 

@@ -16,21 +16,28 @@ class Parser:
         # Index of current token list (always last)
         self.ptr = 0
 
+        self.line = 1
+
     # Parses token list. Returns AST. Exits on error
     def parse(self) -> AstNode:
-        while self.idx() < self.len():
+        while self.idx < self.len:
             self.stmt()
 
         return self.ast
 
     # Parses single statement
     def stmt(self) -> Stmt:
+        self.line = self.current.line
+        t = self.current.type
+
+        # Fallthrough is expression statement
+        self.add(self.seek(NEWLINE))
         self.expr()
+        self.pop()
 
     # Parses single expression
     def expr(self) -> Expr:
-        util.print_tokens(self.tokens()[self.idx():]) # Debug
-        self.next()
+        pass
 
     # ----------------------- STACK ----------------------- 
 
@@ -48,33 +55,114 @@ class Parser:
         self.idxs.pop()
         self.ptr -= 1
 
-    def current(self) -> Token:
-        return self.tokens()[self.idx()]
-
     def next(self):
-        self.idxs[self.ptr] += 1
+        self.idx += 1
 
-    def set(self, idx: int):
-        self.idxs[self.ptr] = idx
+    def prev(self):
+        self.idx -= 1
 
+    @property
+    def current(self) -> Token:
+        return self.tokens[self.idx]
+
+    @property
     def idx(self) -> int:
         return self.idxs[self.ptr]
 
-    def len(self) -> int:
-        return len(self.tokens())
+    @idx.setter
+    def idx(self, idx: int):
+        self.idxs[self.ptr] = idx
 
+    @property
+    def len(self) -> int:
+        return len(self.tokens)
+
+    @property
     def tokens(self) -> list[Token]:
         return self.list[self.ptr]
 
+    @property
+    def first(self) -> Token:
+        return self.tokens[0]
+
+    @property
+    def last(self) -> Token:
+        return self.tokens[self.len-1]
+
+    @property
+    def eof(self) -> bool:
+        return self.idx >= self.len
+
     # ---------------------- HELPERS ----------------------
+
+    # Add error to stack, terminates parsing if fatal
+    def err(self, msg: str, fatal: bool = False, point: int = None):
+        first, last = self.first.col, self.last.col + len(self.last.lexeme)
+        if point != None: first, last = point, point+1
+        error = util.Error(msg, self.line, first, last, self.first.string, fatal)
+        self.errstack.add(error)
 
     # Expects and consumes single token
     def expect(self, tok: int):
         pass
 
-    # Returns index of end token. Skips groups
-    def seek(self, end: int):
-        pass
+    # Returns the tokens between curIdx and end_t. Empty list
+    # on failure (falsy). Consumes end token.
+    def seek(self, end_t: int) -> list[Token]:
+        pairs = {
+            LEFT_PAREN: RIGHT_PAREN,
+            LEFT_SQUARE: RIGHT_SQUARE,
+            LEFT_BRACE: RIGHT_BRACE
+        }
+
+        syms = {
+            LEFT_PAREN: "(",
+            LEFT_SQUARE: "[",
+            LEFT_BRACE: "{",
+            RIGHT_PAREN: ")",
+            RIGHT_SQUARE: "]",
+            RIGHT_BRACE: "}"
+        }
+
+        # Loops until EOF. If a token is a pair starter
+        # it is appended to the closers stack. The closing
+        # token must be found before end_t can be matched.
+        interval = []
+        closers = []
+        opening = None
+        while self.idx < self.len:
+            t = self.current.type
+
+            # If a closing bracket is found before an opening
+            if len(closers) == 0:
+                for _, v in pairs.items():
+                    if t == v:
+                        closers.append(t)
+                if len(closers) > 0:
+                    break
+
+            if t in pairs:
+                opening = self.current
+                closers.append(pairs[t])
+
+            if len(closers) > 0 and t == closers[len(closers)-1]:
+                closers.pop()
+
+            if len(closers) == 0 and t == end_t:
+                self.next() # consume end token
+                return interval
+            
+            interval.append(self.current)
+            self.next()
+
+        # Raise error if opening and closing brackets did
+        # not match. Fallthrough is only if end_t was not found
+        if len(closers) != 0:
+            tok = opening
+            if not self.eof: tok = self.current
+            self.err("unmatched brackets", True, tok.col)
+
+        return []
 
     # Any of the given tokens are valid
     def any(self, *args):
