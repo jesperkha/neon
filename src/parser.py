@@ -26,16 +26,20 @@ class Parser:
         self.errstack.print()
         return self.ast
 
+    # Shorthand for invoking a procedure on a new stack frame
+    def proc(self, tokens: list[Token], func) -> any:
+        self.add(tokens)
+        v = func()
+        self.pop()
+        return v
+
     # Parses single statement
     def stmt(self) -> Stmt:
         self.line = self.current.line
         t = self.current.type
 
         # Fallthrough is expression statement
-        self.add(self.seek(NEWLINE))
-        expr = self.expr()
-        self.pop()
-        return ExprStmt(expr)
+        return ExprStmt(self.proc(self.seek(NEWLINE), self.expr))
 
     # Parses single expression
     def expr(self) -> Expr:
@@ -53,10 +57,17 @@ class Parser:
         
         # Group expression
         if (inner := self.group(LEFT_PAREN, RIGHT_PAREN)) and self.eof:
-            self.add(inner)
-            expr = self.expr()
-            self.pop()
-            return Group(expr)
+            return Group(self.proc(inner, self.expr))
+        
+        # Binary expression, checked in order of precedence
+        for sym in (PLUS, MINUS):
+            left, right = self.split(sym)
+            if not left or not right:
+                continue
+
+            l, r = self.proc(left, self.expr), self.proc(right, self.expr)
+            # Todo: add actual operator token
+            return Binary(l, r, self.first)
 
         self.err(f"invalid expression")
 
@@ -207,9 +218,15 @@ class Parser:
 
         return interval
 
-    # Parses expressions on left and right of tok
-    def split(self, tok: int):
-        pass
+    # Returns token intervals of left and right of tok.
+    # Two empty lists on failure (falsy). Consumes to eof
+    def split(self, tok: int) -> tuple[list, list]:
+        left = self.seek(tok)
+        if not left:
+            return [], []
+
+        right = self.tokens[self.idx:]
+        return left, right
 
     # Same as split, but can have multiple split points
     def split_many(self, tok: int):

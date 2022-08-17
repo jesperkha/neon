@@ -7,7 +7,7 @@ def main():
         source = f.read()
         tokens = lexer.Lexer(source).tokenize()
         ast    = parser.Parser(tokens).parse()
-        print(ast)
+        ast.print()
 
 if __name__ == "__main__":
     main()
