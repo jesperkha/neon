@@ -63,11 +63,18 @@ class Parser:
             return Group(self.proc(inner, self.expr))
         
         # Binary expression, checked in order of precedence
-        # Todo: binary should skip the first token when seeking op
         for sym in binary_op:
+            # Remove prefixed symbols in case of unary expression
+            while not self.eof and self.current.type in unary_op:
+                self.next()
+
             left, right = self.split(sym)
             if not left or not right:
                 continue
+
+            # Extend left side to actual length if shortened above
+            left_len = self.len - len(right) - 1
+            left = self.tokens[:left_len]
 
             l, r = self.proc(left, self.expr), self.proc(right, self.expr)
             return Binary(l, r, self.at(len(left)))
@@ -150,8 +157,7 @@ class Parser:
         pass
 
     # Returns the tokens between curIdx and end_t. Empty list
-    # on failure (falsy). Consumes end token. If last is True,
-    # seek will get the tokens up to the last instance of end_t
+    # on failure (falsy). Consumes end token.
     def seek(self, end_t: int) -> list[Token]:
         pairs = {
             LEFT_PAREN: RIGHT_PAREN,
@@ -174,7 +180,7 @@ class Parser:
         interval = []
         closers = []
         opening = None
-        last_idx = self.idx
+        start_idx = self.idx
         while self.idx < self.len:
             t = self.current.type
 
@@ -207,6 +213,7 @@ class Parser:
             if not self.eof: tok = self.current
             self.err("unmatched brackets", True, tok.col)
 
+        self.idx = start_idx
         return []
 
     # Any of the given tokens are valid
