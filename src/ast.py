@@ -14,7 +14,7 @@ class AstNode:
             print(s)
 
     def concat(self, title: str, suffix: str, end: str = "\n") -> str:
-        return f"{self.indent*'  '}{title}: {end}{suffix}"
+        return f"{self.indent*'| '}{title}: {end}{suffix}"
 
     def indent_wrap(func):
         def wrap(self, node):
@@ -46,7 +46,17 @@ class AstNode:
             right = self.concat(".right", self.string_node(node.right))
             op = self.concat(".op", node.op.lexeme, "")
             self.indent -= 1
-            return self.concat("Binary", f"{left}\n{right}\n{op}")
+            return self.concat("Binary", f"{op}\n{left}\n{right}")
+
+        elif t == Empty:
+            return self.concat("Empty", "", "")
+
+        elif t == Unary:
+            self.indent += 1
+            op = self.concat("op", node.op.lexeme, "")
+            expr = self.concat(".expr", self.string_node(node.expr))
+            self.indent -= 1
+            return self.concat("Unary", f"{op}\n{expr}")
 
         return ""
 
@@ -66,6 +76,9 @@ class ExprStmt(Stmt):
         self.expr = expr
 
 # ----------- EXPRESSIONS ------------
+
+class Empty(Expr):
+    pass
 
 class Literal(Expr):
     def __init__(self, tok: Token):
@@ -88,4 +101,9 @@ class Binary(Expr):
         super().__init__()
         self.left = left
         self.right = right
+        self.op = op
+
+class Unary(Expr):
+    def __init__(self, expr: Expr, op: Token):
+        self.expr = expr
         self.op = op

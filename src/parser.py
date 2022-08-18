@@ -44,9 +44,12 @@ class Parser:
     # Parses single expression
     def expr(self) -> Expr:
         if self.len == 0:
-            self.err("empty expression")
+            return Empty()
 
         t = self.current.type
+
+        unary_op = (MINUS, NOT)
+        binary_op = (PLUS, MINUS, STAR, SLASH)
 
         # Literal or variable expression
         if self.len == 1:
@@ -55,19 +58,24 @@ class Parser:
 
             return Literal(self.current)
         
-        # Group expression
+        # Group expression. Check eof after group because it resets idx on failure
         if (inner := self.group(LEFT_PAREN, RIGHT_PAREN)) and self.eof:
             return Group(self.proc(inner, self.expr))
         
         # Binary expression, checked in order of precedence
-        for sym in (PLUS, MINUS):
+        # Todo: binary should skip the first token when seeking op
+        for sym in binary_op:
             left, right = self.split(sym)
             if not left or not right:
                 continue
 
             l, r = self.proc(left, self.expr), self.proc(right, self.expr)
-            # Todo: add actual operator token
-            return Binary(l, r, self.first)
+            return Binary(l, r, self.at(len(left)))
+        
+        # Unary expression. Binary already parsed so remaining
+        # tokens cannot be split by an operator.
+        if self.first.type in unary_op:
+            return Unary(self.proc(self.tokens[1:], self.expr), self.first)
 
         self.err(f"invalid expression")
 
@@ -92,6 +100,9 @@ class Parser:
 
     def prev(self):
         self.idx -= 1
+
+    def at(self, idx: int) -> Token:
+        return self.tokens[idx]
 
     @property
     def current(self) -> Token:
@@ -139,7 +150,8 @@ class Parser:
         pass
 
     # Returns the tokens between curIdx and end_t. Empty list
-    # on failure (falsy). Consumes end token.
+    # on failure (falsy). Consumes end token. If last is True,
+    # seek will get the tokens up to the last instance of end_t
     def seek(self, end_t: int) -> list[Token]:
         pairs = {
             LEFT_PAREN: RIGHT_PAREN,
@@ -162,11 +174,12 @@ class Parser:
         interval = []
         closers = []
         opening = None
+        last_idx = self.idx
         while self.idx < self.len:
             t = self.current.type
 
             if len(closers) == 0 and t == end_t:
-                self.next() # consume end token
+                self.next()
                 return interval
 
             # If a closing bracket is found before an opening
@@ -213,7 +226,7 @@ class Parser:
 
         self.next()
         interval = self.seek(right)
-        if not interval:
+        if not self.eof:
             self.idx = start_idx
 
         return interval
@@ -221,12 +234,7 @@ class Parser:
     # Returns token intervals of left and right of tok.
     # Two empty lists on failure (falsy). Consumes to eof
     def split(self, tok: int) -> tuple[list, list]:
-        left = self.seek(tok)
-        if not left:
-            return [], []
-
-        right = self.tokens[self.idx:]
-        return left, right
+        return self.seek(tok), self.tokens[self.idx:]
 
     # Same as split, but can have multiple split points
     def split_many(self, tok: int):
