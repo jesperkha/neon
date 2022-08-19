@@ -94,6 +94,21 @@ class Parser:
         if self.first.type in unary_op:
             return Unary(self.proc(self.tokens[1:], self.expr), self.first)
 
+        # Call expression. Last 'part' of expression has to be a group
+        if self.last.type == RIGHT_PAREN:
+            # Loop until at last group (arguments)
+            while not self.eof:
+                grp = self.group(LEFT_PAREN, RIGHT_PAREN)
+                if not self.eof:
+                    self.next()
+                    continue
+
+                # Get callee expression
+                left = self.tokens[:self.len-len(grp)-2]
+                callee = self.proc(left, self.expr)
+                inner  = self.proc(grp, self.expr)
+                return Call(callee, inner)
+
         self.err(f"invalid expression")
 
     # ----------------------- STACK ----------------------- 

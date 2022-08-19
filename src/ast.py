@@ -66,6 +66,13 @@ class AstNode:
             self.indent -= 1
             return self.concat("Args", "\n".join(args))
 
+        elif t == Call:
+            self.indent += 1
+            callee = self.concat(".callee", self.string_node(node.callee))
+            inner = self.concat(".inner", self.string_node(node.inner))
+            self.indent -= 1
+            return self.concat("Call", f"{callee}\n{inner}")
+
         return ""
 
 class Stmt(AstNode):
@@ -119,3 +126,8 @@ class Unary(Expr):
 class Args(Expr):
     def __init__(self, args: list[Expr]):
         self.args = args
+
+class Call(Expr):
+    def __init__(self, callee: Expr, inner: Expr):
+        self.callee = callee
+        self.inner = inner
