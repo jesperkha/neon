@@ -58,6 +58,16 @@ class Parser:
 
             return Literal(self.current)
         
+        # Argument list expression. Expressions seperated by comma
+        arg_toks = []
+        while toks := self.seek(COMMA):
+            arg_toks.append(toks)
+
+        if len(arg_toks) > 0:
+            arg_toks.append(self.tokens[self.idx:])
+            args = [self.proc(t, self.expr) for t in arg_toks]
+            return Args(args)
+        
         # Group expression. Check eof after group because it resets idx on failure
         if (inner := self.group(LEFT_PAREN, RIGHT_PAREN)) and self.eof:
             return Group(self.proc(inner, self.expr))

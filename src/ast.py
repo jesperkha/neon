@@ -58,6 +58,14 @@ class AstNode:
             self.indent -= 1
             return self.concat("Unary", f"{op}\n{expr}")
 
+        elif t == Args:
+            self.indent += 1
+            args = []
+            for a in node.args:
+                args.append(self.string_node(a))
+            self.indent -= 1
+            return self.concat("Args", "\n".join(args))
+
         return ""
 
 class Stmt(AstNode):
@@ -107,3 +115,7 @@ class Unary(Expr):
     def __init__(self, expr: Expr, op: Token):
         self.expr = expr
         self.op = op
+
+class Args(Expr):
+    def __init__(self, args: list[Expr]):
+        self.args = args
