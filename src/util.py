@@ -1,3 +1,5 @@
+from tokens import NEWLINE
+
 def red(text: str) -> str:
     return f"\033[91m{text}\033[0m"
 
@@ -36,5 +38,6 @@ class ErrorStack:
 
 def print_tokens(tokens: list):
     for t in tokens:
-        print(t.lexeme, end=" ")
+        if t.type == NEWLINE: print("\\n", end=" ")
+        else: print(t.lexeme, end=" ")
     print()

@@ -38,6 +38,14 @@ class Parser:
         self.line = self.current.line
         t = self.current.type
 
+        # Variable declaration
+        if var := self.seek(COLON_EQUAL):
+            if len(var) != 1:
+                self.range_err("expected identifier on left side of ':='", var, True)
+
+            expr = self.proc(self.seek(NEWLINE), self.expr)
+            return Declaration(var[0], expr)
+
         # Fallthrough is expression statement
         return ExprStmt(self.proc(self.seek(NEWLINE), self.expr))
 
@@ -65,7 +73,7 @@ class Parser:
             arg_toks.append(toks)
 
         if len(arg_toks) > 0:
-            arg_toks.append(self.tokens[self.idx:])
+            arg_toks.append(self.rest)
             args = [self.proc(t, self.expr) for t in arg_toks]
             return Args(args)
         
@@ -158,6 +166,10 @@ class Parser:
         return self.list[self.ptr]
 
     @property
+    def rest(self) -> list[Token]:
+        return self.tokens[self.idx:]
+
+    @property
     def first(self) -> Token:
         return self.tokens[0]
 
@@ -177,6 +189,10 @@ class Parser:
         if point != None: first, last = point, point+1
         error = util.Error(msg, self.line, first, last, self.first.string, fatal)
         self.errstack.add(error)
+
+    # Highlights specified token range in error
+    def range_err(self, msg: str, tokens: list[Token], fatal: bool = False):
+        self.proc(tokens, lambda: self.err(msg, fatal))
 
     # Expects and consumes single token
     def expect(self, tok: int):
@@ -267,7 +283,7 @@ class Parser:
     # Returns token intervals of left and right of tok.
     # Two empty lists on failure (falsy). Consumes to eof
     def split(self, tok: int) -> tuple[list, list]:
-        return self.seek(tok), self.tokens[self.idx:]
+        return self.seek(tok), self.rest
 
     # Same as split, but can have multiple split points
     def split_many(self, tok: int):
