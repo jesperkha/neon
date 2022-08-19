@@ -48,8 +48,9 @@ class Parser:
 
         t = self.current.type
 
+        # Order of precedence, hi -> lo
         unary_op = (MINUS, NOT)
-        binary_op = (PLUS, MINUS, STAR, SLASH)
+        binary_op = (SLASH, STAR, PLUS, MINUS)
 
         # Literal or variable expression
         if self.len == 1:
