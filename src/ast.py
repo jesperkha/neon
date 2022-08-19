@@ -37,6 +37,16 @@ class AstNode:
             expr = self.concat(".expr", self.string_node(node.expr))
             self.indent -= 1
             return self.concat("Declaration", f"{name}\n{expr}")
+
+        elif t == Assignment:
+            self.indent += 1
+            left = self.concat(".left", self.string_node(node.left))
+            expr = self.concat(".expr", self.string_node(node.expr))
+            self.indent -= 1
+            return self.concat("Assignment", f"{left}\n{expr}")
+
+        elif t == Return:
+            return self.concat("Return", self.string_node(node.expr))
         
         elif t == Literal:
             return self.concat("Literal", node.token.lexeme, "")
@@ -100,6 +110,15 @@ class ExprStmt(Stmt):
 class Declaration(Stmt):
     def __init__(self, ident: Token, expr: Expr):
         self.ident = ident
+        self.expr = expr
+
+class Assignment(Stmt):
+    def __init__(self, left: Expr, expr: Expr):
+        self.left = left
+        self.expr = expr
+
+class Return(Stmt):
+    def __init__(self, expr: Expr):
         self.expr = expr
 
 # ----------- EXPRESSIONS ------------

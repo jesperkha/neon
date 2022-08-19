@@ -16,7 +16,8 @@ class Lexer:
         while self.idx < len(self.source) - 1:
             char = self.next()
             self.string += char
-            nextchar = "" if self.idx >= len(self.source) - 1 else self.source[self.idx + 1]
+            nextchar = "" if self.idx >= len(self.source) - 1 \
+                          else self.source[self.idx+1]
 
             if char == "\n":
                 self.add(NEWLINE, "", self.line, self.col)

@@ -40,11 +40,27 @@ class Parser:
 
         # Variable declaration
         if var := self.seek(COLON_EQUAL):
-            if len(var) != 1:
+            if len(var) != 1 or var[0].type != IDENTIFIER:
                 self.range_err("expected identifier on left side of ':='", var, True)
 
             expr = self.proc(self.seek(NEWLINE), self.expr)
             return Declaration(var[0], expr)
+
+        # Assignment. Left side is expression in case of
+        # indexing or struct property, checked in scan.
+        if var := self.seek(EQUAL):
+            left = self.proc(var, self.expr)
+            expr = self.proc(self.seek(NEWLINE), self.expr)
+            return Assignment(left, expr)
+
+        # Return statement. Return outside func checked in scan.
+        if t == RETURN:
+            self.next()
+            return Return(self.proc(self.seek(NEWLINE), self.expr))
+        
+        # Todo: implement block statement
+
+        # Todo: implement func statement
 
         # Fallthrough is expression statement
         return ExprStmt(self.proc(self.seek(NEWLINE), self.expr))
