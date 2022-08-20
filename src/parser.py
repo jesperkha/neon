@@ -203,10 +203,16 @@ class Parser:
     # ---------------------- HELPERS ----------------------
 
     # Add error to stack, terminates parsing if fatal
-    def err(self, msg: str, fatal: bool = False, point: int = None):
+    def err(self, msg: str, fatal: bool = False, point: Token = None):
         first, last = self.first.col, self.last.col + len(self.last.lexeme)
-        if point != None: first, last = point, point+1
-        error = util.Error(msg, self.line, first, last, self.first.string, fatal)
+        string, line = self.first.string, self.line
+
+        # Specify token to highlight as err. Set error msg to tokens line
+        if point != None:
+            first, last = point.col, point.col+1
+            string, line = point.string, point.line
+
+        error = util.Error(msg, line, first, last, string, fatal)
         self.errstack.add(error)
 
     # Highlights specified token range in error
@@ -270,10 +276,9 @@ class Parser:
         # Raise error if opening and closing brackets did
         # not match. Fallthrough is only if end_t was not found
         if len(closers) != 0:
-            # Todo: fix this. doesnt work for multiline
             tok = opening
             if not self.eof: tok = self.current
-            self.err("unmatched brackets", True, tok.col)
+            self.err("unmatched brackets", True, tok)
 
         self.idx = start_idx
         return []
