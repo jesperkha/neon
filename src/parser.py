@@ -4,8 +4,8 @@ import util
 
 class Parser:
     def __init__(self, tokens: list[Token]):
-        self.ast = AstNode(tokens)
         self.errstack = util.ErrorStack()
+        self.line = 1
 
         # Current token list that is being parsed. Expressions usually
         # have recursive calls so a token list stack gives depth without
@@ -16,15 +16,14 @@ class Parser:
         # Index of current token list (always last)
         self.ptr = 0
 
-        self.line = 1
-
     # Parses token list. Returns AST. Exits on error
     def parse(self) -> AstNode:
+        ast = AstNode()
         while self.idx < self.len:
-            self.ast.stmts.append(self.stmt())
+            ast.stmts.append(self.stmt())
 
         self.errstack.print()
-        return self.ast
+        return ast
 
     # Shorthand for invoking a procedure on a new stack frame
     def proc(self, tokens: list[Token], func) -> any:
@@ -58,7 +57,11 @@ class Parser:
             self.next()
             return Return(self.proc(self.seek(NEWLINE), self.expr))
         
-        # Todo: implement block statement
+        # Block statement
+        if t == LEFT_BRACE:
+            self.next() # skip opening brace
+            stmts = self.proc(self.seek(RIGHT_BRACE), self.parse)
+            return Block(stmts.stmts)
 
         # Todo: implement func statement
 
@@ -267,6 +270,7 @@ class Parser:
         # Raise error if opening and closing brackets did
         # not match. Fallthrough is only if end_t was not found
         if len(closers) != 0:
+            # Todo: fix this. doesnt work for multiline
             tok = opening
             if not self.eof: tok = self.current
             self.err("unmatched brackets", True, tok.col)

@@ -2,16 +2,18 @@ from tokens import *
 import util
 
 class AstNode:
-    def __init__(self, tokens: list[Token]):
-        self.tokens = tokens
+    def __init__(self):
         self.stmts = []
         self.indent = 0
 
     def print(self):
         for node in self.stmts:
             self.indent = -1
-            s = self.string_node(node)
-            print(s)
+            print(self.string_node(node))
+
+    def print_block(self, stmts):
+        for node in stmts:
+            print(self.string_node(node), end="")
 
     def concat(self, title: str, suffix: str, end: str = "\n") -> str:
         return f"{self.indent*'| '}{title}: {end}{suffix}"
@@ -30,6 +32,11 @@ class AstNode:
         t = type(node)
         if t == ExprStmt:
             return self.concat("ExprStmt", self.string_node(node.expr))
+
+        elif t == Block:
+            print(self.concat("Block", "", ""))
+            self.print_block(node.stmts)
+            return ""
         
         elif t == Declaration:
             self.indent += 1
@@ -93,12 +100,10 @@ class AstNode:
         return ""
 
 class Stmt(AstNode):
-    def __init__(self):
-        self.tokens = []
+    pass
 
 class Expr(AstNode):
-    def __init__(self):
-        self.tokens = []
+    pass
 
 # ------------ STATEMENTS ------------ 
 
@@ -121,6 +126,10 @@ class Return(Stmt):
     def __init__(self, expr: Expr):
         self.expr = expr
 
+class Block(Stmt):
+    def __init__(self, stmts: list[Stmt]):
+        self.stmts = stmts
+
 # ----------- EXPRESSIONS ------------
 
 class Empty(Expr):
@@ -139,7 +148,6 @@ class Variable(Expr):
 class Group(Expr):
     def __init__(self, inner: Expr):
         super().__init__()
-        self.tokens = []
         self.inner = inner
 
 class Binary(Expr):
