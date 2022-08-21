@@ -231,7 +231,6 @@ class Matcher:
         # token, and match the token interval between the two.
         elif typ == Group:
             left = self.tokens[self.idx]
-            # Todo: add optional Group and Seek arg for non-skip
             end_idx = self.seek(pattern.right)
             if left.type != pattern.left or end_idx == -1:
                 return False
@@ -276,7 +275,6 @@ class Matcher:
 
             return True
 
-        # Todo: implement SplitMany
         elif typ == SplitMany:
             pass
 

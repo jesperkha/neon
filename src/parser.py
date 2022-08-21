@@ -59,14 +59,47 @@ class Parser:
         
         # Block statement
         if t == LEFT_BRACE:
-            self.next() # skip opening brace
-            stmts = self.proc(self.seek(RIGHT_BRACE), self.parse)
-            return Block(stmts.stmts)
+            return self.block()
 
         # Todo: implement func statement
+        if t == FUNC:
+            self.next() # skip keyword
+
+            # Function name and left paren before params
+            name = self.expect(IDENTIFIER, "function name")
+            self.expect(LEFT_PAREN, "'('")
+
+            # Consume all parameter names and types
+            params = []
+            while not self.eof and self.current.type != RIGHT_PAREN:
+                name = self.expect(IDENTIFIER, "parameter name")
+                params.append(Param(name.lexeme, self.type()))
+                if self.current.type != COMMA:
+                    self.expect(RIGHT_PAREN, "')'")
+                    break
+
+                self.next()
+
+            # While statement only exits from break
+            else: self.expect(RIGHT_PAREN, "')'")
+
+            # Consumes possible return type
+            return_t = None
+            if self.current.type != LEFT_BRACE:
+                return_t = self.type()
+
+            # Function body as block statement
+            block = self.block()
+            return Function(name.lexeme, params, return_t, block)
 
         # Fallthrough is expression statement
         return ExprStmt(self.proc(self.seek(NEWLINE), self.expr))
+    
+    # Parses single block statement. Expects it, throws error if not found
+    def block(self) -> Block:
+        self.expect(LEFT_BRACE, "block")
+        ast = self.proc(self.seek(RIGHT_BRACE), self.parse)
+        return Block(ast.stmts)
 
     # Parses single expression
     def expr(self) -> Expr:
@@ -138,6 +171,13 @@ class Parser:
                 return Call(callee, inner)
 
         self.err(f"invalid expression")
+
+    # Parse and consume type name (with prefixed colon)
+    # Todo: implement type parsing
+    def type(self) -> Type:
+        self.expect(COLON, "':' before type")
+        typ = self.expect(IDENTIFIER, "type")
+        return Type(typ.lexeme)
 
     # ----------------------- STACK ----------------------- 
 
@@ -219,9 +259,13 @@ class Parser:
     def range_err(self, msg: str, tokens: list[Token], fatal: bool = False):
         self.proc(tokens, lambda: self.err(msg, fatal))
 
-    # Expects and consumes single token
-    def expect(self, tok: int):
-        pass
+    # Expects and consumes single token. Return token
+    def expect(self, tok: int, name: str) -> Token:
+        if self.current.type != tok:
+            self.err(f"expected {name}", True, self.current)
+        t = self.current
+        self.next()
+        return t
 
     # Returns the tokens between curIdx and end_t. Empty list
     # on failure (falsy). Consumes end token.
@@ -264,6 +308,7 @@ class Parser:
                     break
 
             if t in pairs:
+                # Todo: better tracking of which token was faulty
                 opening = self.current
                 closers.append(pairs[t])
 

@@ -1,6 +1,15 @@
 from tokens import *
 import util
 
+class Type:
+    def __init__(self, string: str):
+        self.string = string
+
+class Param:
+    def __init__(self, name: str, typ: Type):
+        self.name = name
+        self.type = typ
+
 class AstNode:
     def __init__(self):
         self.stmts = []
@@ -9,11 +18,13 @@ class AstNode:
     def print(self):
         for node in self.stmts:
             self.indent = -1
-            print(self.string_node(node))
+            if s := self.string_node(node):
+                print(s)
 
-    def print_block(self, stmts):
-        for node in stmts:
-            print(self.string_node(node), end="")
+    def print_block(self, block):
+        for node in block.stmts:
+            s = self.string_node(node)
+            print(s, end="" if s == "" else "\n")
 
     def concat(self, title: str, suffix: str, end: str = "\n") -> str:
         return f"{self.indent*'| '}{title}: {end}{suffix}"
@@ -31,11 +42,26 @@ class AstNode:
     def string_node(self, node) -> str:
         t = type(node)
         if t == ExprStmt:
+            if type(node.expr) == Empty:
+                return ""
             return self.concat("ExprStmt", self.string_node(node.expr))
 
         elif t == Block:
             print(self.concat("Block", "", ""))
-            self.print_block(node.stmts)
+            self.print_block(node)
+            return ""
+
+        elif t == Function:
+            s = "("
+            for p in node.params:
+                s += f"{p.name}: {p.type.string},"
+            s = s[:len(s)-1] + ")"
+            if node.return_t:
+                s += f": {node.return_t.string}"
+
+            func = self.concat("Function", s, "")
+            print(func)
+            self.print_block(node.body)
             return ""
         
         elif t == Declaration:
@@ -71,9 +97,6 @@ class AstNode:
             op = self.concat(".op", node.op.lexeme, "")
             self.indent -= 1
             return self.concat("Binary", f"{op}\n{left}\n{right}")
-
-        elif t == Empty:
-            return self.concat("Empty", "", "")
 
         elif t == Unary:
             self.indent += 1
@@ -130,6 +153,13 @@ class Block(Stmt):
     def __init__(self, stmts: list[Stmt]):
         self.stmts = stmts
 
+class Function:
+    def __init__(self, name: str, params: list[Param], return_t: Type, body: Block):
+        self.name = name
+        self.params = params
+        self.return_t = return_t
+        self.body = body
+
 # ----------- EXPRESSIONS ------------
 
 class Empty(Expr):
@@ -170,3 +200,4 @@ class Call(Expr):
     def __init__(self, callee: Expr, inner: Expr):
         self.callee = callee
         self.inner = inner
+

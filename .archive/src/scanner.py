@@ -128,7 +128,6 @@ class Scanner:
                 prev = scope[name].type
                 if prev != typ:
                     util.err(f"mismatched types in assignment, expected {prev}, got {typ}, line {self.line}")
-                # Todo: implement array length state
                 scope[name].type = typ # Update array length
                 return
             i -= 1
@@ -321,8 +320,6 @@ class Scanner:
             if index.float:
                 util.err(f"expected index to be integer, got {index}, line {self.line}")
 
-            # Todo: handle negative indexing
-            # Todo: check index out of range
             return arr.sub_type
 
         elif expr.type == EXPR_LITERAL:
@@ -342,7 +339,6 @@ class Scanner:
             right = self.eval_expr(expr.right, True)
             op = expr.operator
             
-            # Todo: implement the remaining ops
             if op.type == IN:
                 if right != TYPE_ARRAY:
                     util.err(f"expected right expression to be array, got {right}, line {self.line}")
@@ -354,7 +350,6 @@ class Scanner:
                 if op.type not in binary_op_combos[n.kind]:
                     util.err(f"invalid operator '{op}' for type {n}, line {self.line}")
 
-            # Todo: make function to check if number is signed/negative
             if op.type in (BIT_OR, BIT_XOR, BIT_AND, BIT_LSHIFT, BIT_RSHIFT):
                 if op.type in (BIT_LSHIFT, BIT_RSHIFT):
                     # check if right is unsigned int
@@ -362,8 +357,6 @@ class Scanner:
                         util.err(f"expected unsigned int in shift expression, got {right}, line {self.line}")
                     return left
                 
-                # Todo: check for bit length of number
-                # Todo: add runtime err for negative numbers
                 return left
 
             if op.type == MODULO:
