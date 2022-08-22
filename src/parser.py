@@ -110,7 +110,7 @@ class Parser:
 
         # Order of precedence, hi -> lo
         unary_op = (MINUS, NOT)
-        binary_op = (SLASH, STAR, PLUS, MINUS)
+        binary_op = (PLUS, MINUS, STAR, SLASH)
 
         # Literal or variable expression
         if self.len == 1:
