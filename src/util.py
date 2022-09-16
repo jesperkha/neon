@@ -13,8 +13,12 @@ class Error:
         self.string = string
 
     def print(self):
+        # Todo: fix whitespace for indents
         print(f"{red('error:')} {self.msg}, line {self.line}")
-        print(f" {self.line} | " + self.string.replace("\n", ""))
+        s = self.string
+        s = self.string.replace("\n", "")
+        s = self.string.replace("\t", 4*" ")
+        print(f" {self.line} | {s}")
         print(f" {len(str(self.line))*' '} | " + red(" "*self.start + "^"*(self.end-self.start)))
         print()
 

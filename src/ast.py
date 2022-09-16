@@ -27,6 +27,7 @@ class AstNode:
             print(s, end="" if s == "" else "\n")
 
     def concat(self, title: str, suffix: str, end: str = "\n") -> str:
+        if suffix == "": end = ""
         return f"{self.indent*'| '}{title}: {end}{suffix}"
 
     def indent_wrap(func):
@@ -52,10 +53,10 @@ class AstNode:
             return ""
 
         elif t == Function:
-            s = "("
+            s = ""
             for p in node.params:
-                s += f"{p.name}: {p.type.string},"
-            s = s[:len(s)-1] + ")"
+                s += f"{p.name}: {p.type.string}, "
+            s = "(" + s[:len(s)-2] + ")"
             if node.return_t:
                 s += f": {node.return_t.string}"
 
@@ -92,15 +93,15 @@ class AstNode:
 
         elif t == Binary:
             self.indent += 1
-            left = self.concat(".left", self.string_node(node.left))
+            left  = self.concat(".left", self.string_node(node.left))
             right = self.concat(".right", self.string_node(node.right))
-            op = self.concat(".op", node.op.lexeme, "")
+            op    = self.concat(".op", node.op.lexeme, "")
             self.indent -= 1
             return self.concat("Binary", f"{op}\n{left}\n{right}")
 
         elif t == Unary:
             self.indent += 1
-            op = self.concat("op", node.op.lexeme, "")
+            op   = self.concat("op", node.op.lexeme, "")
             expr = self.concat(".expr", self.string_node(node.expr))
             self.indent -= 1
             return self.concat("Unary", f"{op}\n{expr}")
@@ -116,7 +117,7 @@ class AstNode:
         elif t == Call:
             self.indent += 1
             callee = self.concat(".callee", self.string_node(node.callee))
-            inner = self.concat(".inner", self.string_node(node.inner))
+            inner  = self.concat(".inner", self.string_node(node.inner))
             self.indent -= 1
             return self.concat("Call", f"{callee}\n{inner}")
 

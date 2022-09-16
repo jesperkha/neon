@@ -25,6 +25,11 @@ class Lexer:
                 self.string = ""
                 self.col = -1
                 continue
+            
+            if char == "\t":
+                self.col += 3
+                self.string += ""
+                continue
 
             # Non-newline whitespace is ignored
             if char in whitespace_lookup:
