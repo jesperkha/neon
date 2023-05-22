@@ -123,7 +123,7 @@ TYPE_NULL   = "NULL"
 TYPE_ANY    = "ANY"
 TYPE_STRING = "STRING"
 TYPE_CHAR   = "CHAR"
-TYPE_INT    = "INT"
+TYPE_BYTE   = "BYTE"
 TYPE_FLOAT  = "FLOAT"
 TYPE_I8     = "I8"
 TYPE_I16    = "I16"
@@ -149,7 +149,6 @@ KIND_ARRAY  = "K_ARRAY"
 KIND_STRUCT = "K_STRUCT"
 
 NUMBER_KINDS = (
-    TYPE_INT,
     TYPE_I8,
     TYPE_I16,
     TYPE_I32,
@@ -158,9 +157,9 @@ NUMBER_KINDS = (
     TYPE_U16,
     TYPE_U32,
     TYPE_U64,
-    TYPE_FLOAT,
     TYPE_F32,
-    TYPE_F64
+    TYPE_F64,
+    TYPE_BYTE
 )
 
 STRING_KINDS = (
@@ -204,11 +203,12 @@ keyword_lookup = {
 }
 
 typeword_lookup = {
-    "int":    TYPE_INT,
-    "float":  TYPE_FLOAT,
+    "int":    TYPE_I32,
+    "float":  TYPE_F32,
     "bool":   TYPE_BOOL,
     "string": TYPE_STRING,
     "char":   TYPE_CHAR,
+    "byte":   TYPE_BYTE,
     "i8":     TYPE_I8,
     "i16":    TYPE_I16,
     "i32":    TYPE_I32,

@@ -16,6 +16,8 @@ class Parser:
         # Index of current token list (always last)
         self.ptr = 0
 
+        # Todo: implement definition scope and check variables/types
+
     # Parses token list. Returns AST. Exits on error
     def parse(self) -> AstNode:
         ast = AstNode()
@@ -61,7 +63,7 @@ class Parser:
         if t == LEFT_BRACE:
             return self.block()
 
-        # Todo: implement func statement
+        # Function statement
         if t == FUNC:
             self.next() # skip keyword
 
@@ -173,11 +175,13 @@ class Parser:
         self.err(f"invalid expression")
 
     # Parse and consume type name (with prefixed colon)
-    # Todo: implement type parsing
     def type(self) -> Type:
         self.expect(COLON, "':' before type")
         typ = self.expect(IDENTIFIER, "type")
-        return Type(typ.lexeme)
+        if typ.lexeme in typeword_lookup:
+            return Type(typeword_lookup[typ.lexeme])
+
+        self.err(f"undefined type {typ.lexeme}", True, typ)
 
     # ----------------------- STACK ----------------------- 
 
@@ -249,7 +253,7 @@ class Parser:
 
         # Specify token to highlight as err. Set error msg to tokens line
         if point != None:
-            first, last = point.col, point.col+1
+            first, last = point.col, point.col+len(point.lexeme)
             string, line = point.string, point.line
 
         error = util.Error(msg, line, first, last, string, fatal)
