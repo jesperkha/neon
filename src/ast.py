@@ -1,5 +1,4 @@
 from tokens import *
-import util
 
 class Type:
     def __init__(self, string: str):
@@ -60,7 +59,7 @@ class AstNode:
             if node.return_t:
                 s += f": {node.return_t.string}"
 
-            func = self.concat("Function", s, "")
+            func = self.concat(f"Function {node.name}", s, "")
             print(func)
             self.print_block(node.body)
             return ""

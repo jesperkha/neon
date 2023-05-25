@@ -1,6 +1,10 @@
 from tokens import *
 import util
 
+def print_tokens(tokens: list[Token]):
+    for t in tokens:
+        print(t.lexeme if t.lexeme else "//", end=" ")
+
 class Lexer:
     def __init__(self, source: str):
         self.tokens = []
@@ -18,7 +22,7 @@ class Lexer:
             self.string += char
             nextchar = "" if self.idx >= len(self.source) - 1 \
                           else self.source[self.idx+1]
-
+            
             if char == "\n":
                 self.add(NEWLINE, "", self.line, self.col)
                 self.line += 1

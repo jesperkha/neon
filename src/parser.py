@@ -1,5 +1,5 @@
 from tokens import *
-from ast import *
+import ast
 import util
 
 class Parser:
@@ -19,13 +19,13 @@ class Parser:
         # Todo: implement definition scope and check variables/types
 
     # Parses token list. Returns AST. Exits on error
-    def parse(self) -> AstNode:
-        ast = AstNode()
+    def parse(self) -> ast.AstNode:
+        node = ast.AstNode()
         while self.idx < self.len:
-            ast.stmts.append(self.stmt())
+            node.stmts.append(self.stmt())
 
         self.errstack.print()
-        return ast
+        return node
 
     # Shorthand for invoking a procedure on a new stack frame
     def proc(self, tokens: list[Token], func) -> any:
@@ -35,47 +35,30 @@ class Parser:
         return v
 
     # Parses single statement
-    def stmt(self) -> Stmt:
+    def stmt(self) -> ast.Stmt:
         self.line = self.current.line
         t = self.current.type
 
-        # Variable declaration
-        if var := self.seek(COLON_EQUAL):
-            if len(var) != 1 or var[0].type != IDENTIFIER:
-                self.range_err("expected identifier on left side of ':='", var, True)
-
-            expr = self.proc(self.seek(NEWLINE), self.expr)
-            return Declaration(var[0], expr)
-
-        # Assignment. Left side is expression in case of
-        # indexing or struct property, checked in scan.
-        if var := self.seek(EQUAL):
-            left = self.proc(var, self.expr)
-            expr = self.proc(self.seek(NEWLINE), self.expr)
-            return Assignment(left, expr)
+        # Note: define keyword statements before symbols
 
         # Return statement. Return outside func checked in scan.
         if t == RETURN:
             self.next()
-            return Return(self.proc(self.seek(NEWLINE), self.expr))
-        
-        # Block statement
-        if t == LEFT_BRACE:
-            return self.block()
+            return ast.Return(self.proc(self.seek(NEWLINE), self.expr))
 
         # Function statement
         if t == FUNC:
             self.next() # skip keyword
 
             # Function name and left paren before params
-            name = self.expect(IDENTIFIER, "function name")
+            func_name = self.expect(IDENTIFIER, "function name")
             self.expect(LEFT_PAREN, "'('")
 
             # Consume all parameter names and types
             params = []
             while not self.eof and self.current.type != RIGHT_PAREN:
                 name = self.expect(IDENTIFIER, "parameter name")
-                params.append(Param(name.lexeme, self.type()))
+                params.append(ast.Param(name.lexeme, self.type()))
                 if self.current.type != COMMA:
                     self.expect(RIGHT_PAREN, "')'")
                     break
@@ -92,21 +75,46 @@ class Parser:
 
             # Function body as block statement
             block = self.block()
-            return Function(name.lexeme, params, return_t, block)
+            return ast.Function(func_name.lexeme, params, return_t, block)
+                
+        # Block statement
+        if t == LEFT_BRACE:
+            return self.block()
+        
+        # Variable declaration
+        # Todo: error (possibly windows-only) when declared in block
+        # same for assignment
+        # Example:
+        # {
+        #   a := 0
+        # }
+        if var := self.seek(COLON_EQUAL):
+            if len(var) != 1 or var[0].type != IDENTIFIER:
+                self.range_err("expected identifier on left side of ':='", var, True)
+
+            expr = self.proc(self.seek(NEWLINE), self.expr)
+            return ast.Declaration(var[0], expr)
+
+        # Assignment. Left side is expression in case of
+        # indexing or struct property, checked in scan.
+        if var := self.seek(EQUAL):
+            left = self.proc(var, self.expr)
+            expr = self.proc(self.seek(NEWLINE), self.expr)
+            return ast.Assignment(left, expr)
 
         # Fallthrough is expression statement
-        return ExprStmt(self.proc(self.seek(NEWLINE), self.expr))
+        return ast.ExprStmt(self.proc(self.seek(NEWLINE), self.expr))
     
     # Parses single block statement. Expects it, throws error if not found
-    def block(self) -> Block:
+    def block(self) -> ast.Block:
         self.expect(LEFT_BRACE, "block")
-        ast = self.proc(self.seek(RIGHT_BRACE), self.parse)
-        return Block(ast.stmts)
+        node = self.proc(self.seek(RIGHT_BRACE), self.parse)
+        return ast.Block(node.stmts)
 
     # Parses single expression
-    def expr(self) -> Expr:
+    def expr(self) -> ast.Expr:
         if self.len == 0:
-            return Empty()
+            return ast.Empty()
 
         t = self.current.type
 
@@ -117,9 +125,9 @@ class Parser:
         # Literal or variable expression
         if self.len == 1:
             if t == IDENTIFIER:
-                return Variable(self.current)
+                return ast.Variable(self.current)
 
-            return Literal(self.current)
+            return ast.Literal(self.current)
         
         # Argument list expression. Expressions seperated by comma
         arg_toks = []
@@ -129,11 +137,11 @@ class Parser:
         if len(arg_toks) > 0:
             arg_toks.append(self.rest)
             args = [self.proc(t, self.expr) for t in arg_toks]
-            return Args(args)
+            return ast.Args(args)
         
         # Group expression. Check eof after group because it resets idx on failure
         if (inner := self.group(LEFT_PAREN, RIGHT_PAREN)) and self.eof:
-            return Group(self.proc(inner, self.expr))
+            return ast.Group(self.proc(inner, self.expr))
         
         # Binary expression, checked in order of precedence
         for sym in binary_op:
@@ -150,12 +158,12 @@ class Parser:
             left = self.tokens[:left_len]
 
             l, r = self.proc(left, self.expr), self.proc(right, self.expr)
-            return Binary(l, r, self.at(len(left)))
+            return ast.Binary(l, r, self.at(len(left)))
         
         # Unary expression. Binary already parsed so remaining
         # tokens cannot be split by an operator.
         if self.first.type in unary_op:
-            return Unary(self.proc(self.tokens[1:], self.expr), self.first)
+            return ast.Unary(self.proc(self.tokens[1:], self.expr), self.first)
 
         # Call expression. Last 'part' of expression has to be a group
         if self.last.type == RIGHT_PAREN:
@@ -170,16 +178,16 @@ class Parser:
                 left = self.tokens[:self.len-len(grp)-2]
                 callee = self.proc(left, self.expr)
                 inner  = self.proc(grp, self.expr)
-                return Call(callee, inner)
+                return ast.Call(callee, inner)
 
         self.err(f"invalid expression")
 
     # Parse and consume type name (with prefixed colon)
-    def type(self) -> Type:
+    def type(self) -> ast.Type:
         self.expect(COLON, "':' before type")
         typ = self.expect(IDENTIFIER, "type")
         if typ.lexeme in typeword_lookup:
-            return Type(typeword_lookup[typ.lexeme])
+            return ast.Type(typeword_lookup[typ.lexeme])
 
         self.err(f"undefined type {typ.lexeme}", True, typ)
 

@@ -3,7 +3,7 @@ class Token:
         self.type    = typ
         self.lexeme  = lexeme
         self.line    = line
-        self.col  = col
+        self.col     = col
         self.isfloat = isfloat
         self.string  = string
 
@@ -14,25 +14,6 @@ class Node:
 class Separator:
     def __init__(self, *args):
         self.args = args
-
-class Type:
-    def __init__(self, typ: str, name: str = ""):
-        self.type = typ
-        self.subtype = Type(TYPE_NONE)
-
-        # Set printable name
-        if typ not in (TYPE_ARRAY, TYPE_STRUCT):
-            self.name = typ.lower()
-        elif typ == TYPE_ARRAY:
-            self.name = "[]"
-        elif typ == TYPE_STRUCT:
-            self.name = name
-
-        # Set type kind
-        for key, val in type_to_kind.items():
-            if self.type in val:
-                self.kind = key
-
 
 _i = 0
 def i():
@@ -61,8 +42,8 @@ COMMA         = i()
 
 LEFT_PAREN    = i()
 RIGHT_PAREN   = i()
-LEFT_BRACE    = i() # 18
-RIGHT_BRACE   = i() # 19
+LEFT_BRACE    = i()
+RIGHT_BRACE   = i()
 LEFT_SQUARE   = i()
 RIGHT_SQUARE  = i()
 
@@ -140,14 +121,7 @@ TYPE_FUNC   = "FUNCTION"
 TYPE_ARRAY  = "ARRAY"
 TYPE_STRUCT = "STRUCT"
 
-# Type kinds
-KIND_NONE   = "K_NONE"
-KIND_STRING = "K_STRING"
-KIND_NUMBER = "K_NUMBER"
-KIND_BOOL   = "K_BOOL"
-KIND_ARRAY  = "K_ARRAY"
-KIND_STRUCT = "K_STRUCT"
-
+# Type kinds. Used to compare expression values in static analysis
 NUMBER_KINDS = (
     TYPE_I8,
     TYPE_I16,
@@ -183,6 +157,13 @@ NONE_KINDS = (
     TYPE_NONE,
     TYPE_NULL
 )
+
+KIND_NONE   = "K_NONE"
+KIND_STRING = "K_STRING"
+KIND_NUMBER = "K_NUMBER"
+KIND_BOOL   = "K_BOOL"
+KIND_ARRAY  = "K_ARRAY"
+KIND_STRUCT = "K_STRUCT"
 
 type_to_kind = {
     KIND_NUMBER: NUMBER_KINDS,
