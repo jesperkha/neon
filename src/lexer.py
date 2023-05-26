@@ -4,6 +4,7 @@ import util
 def print_tokens(tokens: list[Token]):
     for t in tokens:
         print(t.lexeme if t.lexeme else "//", end=" ")
+    print()
 
 class Lexer:
     def __init__(self, source: str):

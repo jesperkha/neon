@@ -7,14 +7,6 @@ class Token:
         self.isfloat = isfloat
         self.string  = string
 
-class Node:
-    def __init__(self):
-        pass
-    
-class Separator:
-    def __init__(self, *args):
-        self.args = args
-
 _i = 0
 def i():
     global _i

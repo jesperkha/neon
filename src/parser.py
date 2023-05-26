@@ -20,12 +20,12 @@ class Parser:
 
     # Parses token list. Returns AST. Exits on error
     def parse(self) -> ast.AstNode:
-        node = ast.AstNode()
+        tree = ast.AstNode()
         while self.idx < self.len:
-            node.stmts.append(self.stmt())
+            tree.stmts.append(self.stmt())
 
         self.errstack.print()
-        return node
+        return tree
 
     # Shorthand for invoking a procedure on a new stack frame
     def proc(self, tokens: list[Token], func) -> any:
@@ -83,7 +83,7 @@ class Parser:
         
         # Variable declaration
         # Todo: error (possibly windows-only) when declared in block
-        # same for assignment
+        # same for equal
         # Example:
         # {
         #   a := 0
@@ -304,7 +304,7 @@ class Parser:
         closers = []
         opening = None
         start_idx = self.idx
-        while self.idx < self.len:
+        while not self.eof:
             t = self.current.type
 
             if len(closers) == 0 and t == end_t:
@@ -329,6 +329,10 @@ class Parser:
             
             interval.append(self.current)
             self.next()
+        
+        # Exception for newline seek as eof might occur
+        if end_t == NEWLINE and self.eof:
+            return interval
 
         # Raise error if opening and closing brackets did
         # not match. Fallthrough is only if end_t was not found
