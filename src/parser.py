@@ -162,6 +162,8 @@ class Parser:
         
         # Unary expression. Binary already parsed so remaining
         # tokens cannot be split by an operator.
+        # Todo: problem with unary expressions
+        # Example: a * -b
         if self.first.type in unary_op:
             return ast.Unary(self.proc(self.tokens[1:], self.expr), self.first)
 

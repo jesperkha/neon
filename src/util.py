@@ -1,3 +1,7 @@
+import os
+if os.name == "nt":
+    os.system("color")
+
 from tokens import NEWLINE
 
 def red(text: str) -> str:
