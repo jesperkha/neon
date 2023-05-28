@@ -17,8 +17,6 @@ class Error:
         self.string = string
 
     def print(self):
-        # Todo: fix whitespace for indents
-        # Example?
         print(f"{red('error:')} {self.msg}, line {self.line}")
         s = self.string
         s = self.string.replace("\n", "")

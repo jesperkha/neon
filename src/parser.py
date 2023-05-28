@@ -16,8 +16,6 @@ class Parser:
         # Index of current token list (always last)
         self.ptr = 0
 
-        # Todo: implement definition scope and check variables/types
-
     # Parses token list. Returns AST. Exits on error
     def parse(self) -> ast.AstNode:
         tree = ast.AstNode()
@@ -82,12 +80,6 @@ class Parser:
             return self.block()
         
         # Variable declaration
-        # Todo: error (possibly windows-only) when declared in block
-        # same for equal
-        # Example:
-        # {
-        #   a := 0
-        # }
         if var := self.seek(COLON_EQUAL):
             if len(var) != 1 or var[0].type != IDENTIFIER:
                 self.range_err("expected identifier on left side of ':='", var, True)
@@ -108,6 +100,7 @@ class Parser:
     # Parses single block statement. Expects it, throws error if not found
     def block(self) -> ast.Block:
         self.expect(LEFT_BRACE, "block")
+        self.next() # Todo: check if working on linux, possible newline error
         node = self.proc(self.seek(RIGHT_BRACE), self.parse)
         return ast.Block(node.stmts)
 
@@ -143,6 +136,7 @@ class Parser:
         if (inner := self.group(LEFT_PAREN, RIGHT_PAREN)) and self.eof:
             return ast.Group(self.proc(inner, self.expr))
         
+        # Todo: rewrite binary and unary parsing, wtf is this?
         # Binary expression, checked in order of precedence
         for sym in binary_op:
             # Remove prefixed symbols in case of unary expression
@@ -162,8 +156,6 @@ class Parser:
         
         # Unary expression. Binary already parsed so remaining
         # tokens cannot be split by an operator.
-        # Todo: problem with unary expressions
-        # Example: a * -b
         if self.first.type in unary_op:
             return ast.Unary(self.proc(self.tokens[1:], self.expr), self.first)
 
@@ -323,6 +315,7 @@ class Parser:
 
             if t in pairs:
                 # Todo: better tracking of which token was faulty
+                # Example??
                 opening = self.current
                 closers.append(pairs[t])
 
