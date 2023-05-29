@@ -36,16 +36,36 @@ class Parser:
 
     # Parses single statement
     def stmt(self) -> ast.Stmt:
+        # Remove prefixed newline characters
+        while self.idx < self.len-1 and self.current.type == NEWLINE:
+            self.next()
+
         self.line = self.current.line
         t = self.current.type
 
         # Note: define keyword statements before symbols
+
+        # Todo: if/else/elif statement
+        if t == IF:
+            self.err("if statament not implemented yet", True) # Debug
+
+            self.next()
+            expr = self.proc(self.seek(LEFT_BRACE), self.expr)
+            if ast.is_empty(expr):
+                self.err("expected expression in if statement", True)
+            
+            self.prev()
+            block = self.block()
+            return ast.If(expr, block)
 
         # Return statement. Return outside func checked in scan.
         if t == RETURN:
             self.next()
             return ast.Return(self.proc(self.seek(NEWLINE), self.expr))
 
+        # Todo: problem with seeking
+        # Example: func foo()
+        # Example: func foo() {
         # Function statement
         if t == FUNC:
             self.next()
@@ -80,7 +100,7 @@ class Parser:
         # Block statement
         if t == LEFT_BRACE:
             return self.block()
-        
+
         # Variable declaration
         if var := self.seek(COLON_EQUAL):
             if len(var) != 1 or var[0].type != IDENTIFIER:
@@ -102,7 +122,6 @@ class Parser:
     # Parses single block statement. Expects it, throws error if not found
     def block(self) -> ast.Block:
         self.expect(LEFT_BRACE, "block")
-        self.expect(NEWLINE, "line break after brace")
         node = self.proc(self.seek(RIGHT_BRACE), self.parse)
         return ast.Block(node.stmts)
 
@@ -134,10 +153,6 @@ class Parser:
         if (inner := self.group(LEFT_PAREN, RIGHT_PAREN)) and self.eof:
             return ast.Group(self.proc(inner, self.expr))
         
-        # Order of precedence, hight to low
-        unary_ops = (MINUS, NOT)
-        binary_ops = (PLUS, MINUS, STAR, SLASH)
-
         # Binary expression
         for op in binary_ops:
             # self.idx doesn't increment if no op symbol is found
@@ -171,7 +186,7 @@ class Parser:
                 inner  = self.proc(grp, self.expr)
                 return ast.Call(callee, inner)
 
-        self.err(f"invalid expression")
+        self.err(f"invalid expression", True)
 
     # Parse and consume type name (with prefixed colon)
     def type(self) -> ast.Type:
@@ -311,8 +326,6 @@ class Parser:
                     break
 
             if t in pairs:
-                # Todo: better tracking of which token was faulty
-                # Example??
                 opening = self.current
                 closers.append(pairs[t])
 

@@ -39,8 +39,12 @@ RIGHT_BRACE   = i()
 LEFT_SQUARE   = i()
 RIGHT_SQUARE  = i()
 
+# Keywords
 RETURN        = i()
 FUNC          = i()
+IF            = i()
+ELSE          = i()
+ELIF          = i()
 
 # Binary operators in order of precedency
 AND           = i()
@@ -172,7 +176,10 @@ keyword_lookup = {
     "true":   TRUE,
     "false":  FALSE,
     "in":     IN,
-    "null":   NULL
+    "null":   NULL,
+    "if":     IF,
+    "else":   ELSE,
+    "elif":   ELIF,
 }
 
 typeword_lookup = {
@@ -230,6 +237,27 @@ double_token_lookup = {
     # ">>": BIT_RSHIFT,
     # "<<": BIT_LSHIFT,
 }
+
+binary_ops = (
+    AND,
+    OR,
+    EQUAL_EQUAL,
+    NOT_EQUAL,
+    GREATER_EQUAL,
+    LESS_EQUAL,
+    GREATER,
+    LESS,
+    PLUS,
+    MINUS,
+    STAR,
+    SLASH,
+    MODULO,
+)
+
+unary_ops = (
+    MINUS,
+    NOT,
+)
 
 whitespace_lookup = {
     " ": SPACE,

@@ -63,6 +63,13 @@ class AstNode:
             print(func)
             self.print_block(node.body)
             return ""
+
+        elif t == If:
+            print(self.concat("If", "", ""))
+            print(self.concat(".expr", self.string_node(node.expr)))
+            print(".block:")
+            self.print_block(node.block)
+            return ""
         
         elif t == Declaration:
             self.indent += 1
@@ -160,7 +167,15 @@ class Function:
         self.return_t = return_t
         self.body = body
 
+class If:
+    def __init__(self, expr: Expr, block: Block) -> None:
+        self.expr = expr
+        self.block = block
+
 # ----------- EXPRESSIONS ------------
+
+def is_empty(expr: Expr) -> bool:
+    return type(expr) == type(Empty())
 
 class Empty(Expr):
     pass
