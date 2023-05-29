@@ -102,7 +102,7 @@ class Parser:
     # Parses single block statement. Expects it, throws error if not found
     def block(self) -> ast.Block:
         self.expect(LEFT_BRACE, "block")
-        self.next() # Todo: check if working on linux, possible newline error
+        self.expect(NEWLINE, "line break after brace")
         node = self.proc(self.seek(RIGHT_BRACE), self.parse)
         return ast.Block(node.stmts)
 

@@ -2,7 +2,7 @@ from lexer import Lexer
 from parser import Parser
 
 def main():
-    with open("test/cases") as f:
+    with open("test/cases.ne") as f:
         txt = f.read()
         cases = txt.split("---")
         test_nr = 1
