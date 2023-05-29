@@ -2,6 +2,8 @@ from tokens import *
 import ast
 import util
 
+from lexer import print_tokens # Debug
+
 class Parser:
     def __init__(self, tokens: list[Token]):
         self.errstack = util.ErrorStack()
@@ -46,7 +48,7 @@ class Parser:
 
         # Function statement
         if t == FUNC:
-            self.next() # skip keyword
+            self.next()
 
             # Function name and left paren before params
             func_name = self.expect(IDENTIFIER, "function name")
@@ -111,10 +113,6 @@ class Parser:
 
         t = self.current.type
 
-        # Order of precedence, hi -> lo
-        unary_op = (MINUS, NOT)
-        binary_op = (PLUS, MINUS, STAR, SLASH)
-
         # Literal or variable expression
         if self.len == 1:
             if t == IDENTIFIER:
@@ -136,27 +134,26 @@ class Parser:
         if (inner := self.group(LEFT_PAREN, RIGHT_PAREN)) and self.eof:
             return ast.Group(self.proc(inner, self.expr))
         
-        # Todo: rewrite binary and unary parsing, wtf is this?
-        # Binary expression, checked in order of precedence
-        for sym in binary_op:
-            # Remove prefixed symbols in case of unary expression
-            while not self.eof and self.current.type in unary_op:
-                self.next()
+        # Order of precedence, hight to low
+        unary_ops = (MINUS, NOT)
+        binary_ops = (PLUS, MINUS, STAR, SLASH)
 
-            left, right = self.split(sym)
+        # Binary expression
+        for op in binary_ops:
+            # self.idx doesn't increment if no op symbol is found
+            left, right = self.split_last(op)
             if not left or not right:
                 continue
 
-            # Extend left side to actual length if shortened above
-            left_len = self.len - len(right) - 1
-            left = self.tokens[:left_len]
+            # Magic to parse unary expressions
+            if left[len(left)-1].type in binary_ops:
+                continue
 
             l, r = self.proc(left, self.expr), self.proc(right, self.expr)
             return ast.Binary(l, r, self.at(len(left)))
-        
-        # Unary expression. Binary already parsed so remaining
-        # tokens cannot be split by an operator.
-        if self.first.type in unary_op:
+
+        # Unary expression
+        if self.first.type in unary_ops:
             return ast.Unary(self.proc(self.tokens[1:], self.expr), self.first)
 
         # Call expression. Last 'part' of expression has to be a group
@@ -338,14 +335,6 @@ class Parser:
 
         self.idx = start_idx
         return []
-
-    # Any of the given tokens are valid
-    def any(self, *args):
-        pass
-
-    # Consumes token if present
-    def optional(self, tok: int):
-        pass
     
     # Returns token interval between left and right tokens.
     # Empty list on failure (falsy). Consumes tokens if valid
@@ -365,16 +354,17 @@ class Parser:
     # Two empty lists on failure (falsy). Consumes to eof
     def split(self, tok: int) -> tuple[list, list]:
         return self.seek(tok), self.rest
+    
+    # Same as split but splits as the last instance of the token
+    def split_last(self, tok: int) -> tuple[list, list]:
+        tok_idx = 0
+        while not self.eof:
+            self.idx = tok_idx
+            if not self.seek(tok):
+                break
+            tok_idx = self.idx
+        
+        if tok_idx == 0:
+            return [], []
 
-    # Same as split, but can have multiple split points
-    def split_many(self, tok: int):
-        pass
-
-    # Expression starts with tok
-    def prefix(self, tok: int):
-        pass
-
-    # Expression ends with tok
-    def suffix(self, tok: int):
-        pass
-
+        return self.tokens[:tok_idx-1], self.tokens[tok_idx:]
