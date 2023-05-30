@@ -176,13 +176,14 @@ keyword_lookup = {
     "true":   TRUE,
     "false":  FALSE,
     "in":     IN,
-    "null":   NULL,
     "if":     IF,
     "else":   ELSE,
     "elif":   ELIF,
+    "null":   NULL,
 }
 
 typeword_lookup = {
+    "none":   TYPE_NONE,
     "int":    TYPE_I32,
     "float":  TYPE_F32,
     "bool":   TYPE_BOOL,
@@ -264,3 +265,9 @@ whitespace_lookup = {
     "\n": NEWLINE,
     "\t": TAB
 }
+
+__lookup = keyword_lookup.copy()
+__lookup.update(typeword_lookup.copy())
+__lookup.update(symbol_lookup.copy())
+__lookup.update(double_token_lookup.copy())
+all_tokens = {v: k for k, v in __lookup.items()}

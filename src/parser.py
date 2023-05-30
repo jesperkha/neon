@@ -29,7 +29,7 @@ class Parser:
 
     # Shorthand for invoking a procedure on a new stack frame
     def proc(self, tokens: list[Token], func) -> any:
-        self.add(tokens)
+        self.push(tokens)
         v = func()
         self.pop()
         return v
@@ -63,9 +63,6 @@ class Parser:
             self.next()
             return ast.Return(self.proc(self.seek(NEWLINE), self.expr))
 
-        # Todo: problem with seeking
-        # Example: func foo()
-        # Example: func foo() {
         # Function statement
         if t == FUNC:
             self.next()
@@ -74,26 +71,17 @@ class Parser:
             func_name = self.expect(IDENTIFIER, "function name")
             self.expect(LEFT_PAREN, "'('")
 
-            # Consume all parameter names and types
+            # # Consume all parameter names and types
+            self.push(self.seek(RIGHT_PAREN, True))
             params = []
-            while not self.eof and self.current.type != RIGHT_PAREN:
+            while not self.eof:
+                if len(params) != 0: self.expect(COMMA, "comma")
                 name = self.expect(IDENTIFIER, "parameter name")
                 params.append(ast.Param(name.lexeme, self.type()))
-                if self.current.type != COMMA:
-                    self.expect(RIGHT_PAREN, "')'")
-                    break
+            
+            self.pop()
 
-                self.next()
-
-            # While statement only exits from break
-            else: self.expect(RIGHT_PAREN, "')'")
-
-            # Consumes possible return type
-            return_t = None
-            if self.current.type != LEFT_BRACE:
-                return_t = self.type()
-
-            # Function body as block statement
+            return_t = self.type(True)
             block = self.block()
             return ast.Function(func_name.lexeme, params, return_t, block)
                 
@@ -122,8 +110,8 @@ class Parser:
     # Parses single block statement. Expects it, throws error if not found
     def block(self) -> ast.Block:
         self.expect(LEFT_BRACE, "block")
-        node = self.proc(self.seek(RIGHT_BRACE), self.parse)
-        return ast.Block(node.stmts)
+        block = self.proc(self.seek(RIGHT_BRACE), self.parse)
+        return ast.Block(block.stmts)
 
     # Parses single expression
     def expr(self) -> ast.Expr:
@@ -189,13 +177,16 @@ class Parser:
         self.err(f"invalid expression", True)
 
     # Parse and consume type name (with prefixed colon)
-    def type(self) -> ast.Type:
+    def type(self, optional: bool = False) -> ast.Type:
+        if optional and not self.eof and self.current.type != COLON:
+            return ast.Type(typeword_lookup["none"])
+        
         self.expect(COLON, "':' before type")
         typ = self.expect(IDENTIFIER, "type")
         if typ.lexeme in typeword_lookup:
             return ast.Type(typeword_lookup[typ.lexeme])
 
-        self.err(f"undefined type {typ.lexeme}", True, typ)
+        return ast.Type(typ.lexeme, True)
 
     # ----------------------- STACK ----------------------- 
 
@@ -203,7 +194,7 @@ class Parser:
     # This architecture allows generic helper methods to be used for any expression
     # or statement. It also handles iteration and nesting in the background.
 
-    def add(self, tokens: list[Token]):
+    def push(self, tokens: list[Token]):
         self.list.append(tokens)
         self.idxs.append(0)
         self.ptr += 1
@@ -270,6 +261,7 @@ class Parser:
             first, last = point.col, point.col+len(point.lexeme)
             string, line = point.string, point.line
 
+        if self.eof: first += 1
         error = util.Error(msg, line, first, last, string, fatal)
         self.errstack.add(error)
 
@@ -279,6 +271,8 @@ class Parser:
 
     # Expects and consumes single token. Return token
     def expect(self, tok: int, name: str) -> Token:
+        if self.eof:
+            self.err(f"expected {name}", True, self.last)
         if self.current.type != tok:
             self.err(f"expected {name}", True, self.current)
         t = self.current
@@ -287,20 +281,11 @@ class Parser:
 
     # Returns the tokens between curIdx and end_t. Empty list
     # on failure (falsy). Consumes end token.
-    def seek(self, end_t: int) -> list[Token]:
+    def seek(self, end_t: int, expect: bool = False) -> list[Token]:
         pairs = {
             LEFT_PAREN: RIGHT_PAREN,
             LEFT_SQUARE: RIGHT_SQUARE,
             LEFT_BRACE: RIGHT_BRACE
-        }
-
-        syms = {
-            LEFT_PAREN: "(",
-            LEFT_SQUARE: "[",
-            LEFT_BRACE: "{",
-            RIGHT_PAREN: ")",
-            RIGHT_SQUARE: "]",
-            RIGHT_BRACE: "}"
         }
 
         # Loops until EOF. If a token is a pair starter
@@ -338,7 +323,11 @@ class Parser:
         # Exception for newline seek as eof might occur
         if end_t == NEWLINE and self.eof:
             return interval
-
+        
+        # If token is expected, throw error if not found
+        if expect and self.eof:
+            self.expect(end_t, all_tokens[end_t])
+        
         # Raise error if opening and closing brackets did
         # not match. Fallthrough is only if end_t was not found
         if len(closers) != 0:

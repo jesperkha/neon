@@ -19,10 +19,13 @@ class Error:
     def print(self):
         print(f"{red('error:')} {self.msg}, line {self.line}")
         s = self.string
-        s = self.string.replace("\n", "")
-        s = self.string.replace("\t", 4*" ")
+        s = s.replace("\n", "")
+        s = s.replace("\t", 4*" ")
         print(f" {self.line} | {s}")
-        print(f" {len(str(self.line))*' '} | " + red(" "*self.start + "^"*(self.end-self.start)))
+        diff = self.end-self.start
+        if diff == 0:
+            diff = 1
+        print(f" {len(str(self.line))*' '} | " + red(" "*self.start + "^"*(diff)))
         print()
 
 class ErrorStack:

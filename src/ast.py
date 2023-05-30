@@ -1,8 +1,9 @@
 from tokens import *
 
 class Type:
-    def __init__(self, string: str):
+    def __init__(self, string: str, user_def: bool = False):
         self.string = string
+        self.user_def = user_def
 
 class Param:
     def __init__(self, name: str, typ: Type):
