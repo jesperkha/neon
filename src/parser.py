@@ -43,8 +43,15 @@ class Parser:
         self.line = self.current.line
         t = self.current.type
 
-        # Note: define keyword statements before symbols
-
+        # Return statement. Return outside func checked in scan.
+        if t == RETURN:
+            self.next()
+            return ast.Return(self.proc(self.seek(NEWLINE), self.expr))
+                       
+        # Block statement
+        if t == LEFT_BRACE:
+            return self.block()
+        
         # Todo: if/else/elif statement
         if t == IF:
             self.err("if statament not implemented yet", True) # Debug
@@ -57,11 +64,6 @@ class Parser:
             self.prev()
             block = self.block()
             return ast.If(expr, block)
-
-        # Return statement. Return outside func checked in scan.
-        if t == RETURN:
-            self.next()
-            return ast.Return(self.proc(self.seek(NEWLINE), self.expr))
 
         # Function statement
         if t == FUNC:
@@ -84,10 +86,7 @@ class Parser:
             return_t = self.type(True)
             block = self.block()
             return ast.Function(func_name.lexeme, params, return_t, block)
-                
-        # Block statement
-        if t == LEFT_BRACE:
-            return self.block()
+ 
 
         # Variable declaration
         if var := self.seek(COLON_EQUAL):
@@ -96,6 +95,8 @@ class Parser:
 
             expr = self.proc(self.seek(NEWLINE), self.expr)
             return ast.Declaration(var[0], expr)
+
+        # Todo: variable declaration with type
 
         # Assignment. Left side is expression in case of
         # indexing or struct property, checked in scan.

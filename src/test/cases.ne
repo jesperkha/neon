@@ -29,3 +29,13 @@ foo(1, (a, b, c), 3)
 func foo(a: int, b: string): float {
     return bar
 }
+
+---
+
+// 7
+a := 0
+
+---
+
+// 8
+a = 0
