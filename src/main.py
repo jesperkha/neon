@@ -1,14 +1,21 @@
-import os
-
 import lexer
 import parser
+import scanner
+import builder
+import assembler
 
-def main():
-    with open("test/main.ne") as f:
+def neon_build(filename: str) -> str:
+    with open(filename) as f:
         source = f.read()
-        tokens = lexer.Lexer(source).tokenize()
-        tree   = parser.Parser(tokens).parse()
-        tree.print()
+        tokens = lexer.get_tokens(source)
+        tree   = parser.parse_tokens(tokens)
+        scanner.scan_tree(tree)
+
+        output = builder.build([tree])
+        print(output)
+        
+        files  = assembler.assemble(output)
+        print(files)
 
 if __name__ == "__main__":
-    main()
+    neon_build("test/main.ne")

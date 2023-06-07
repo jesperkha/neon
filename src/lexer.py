@@ -1,6 +1,9 @@
 from tokens import *
 import util
 
+def get_tokens(src: str) -> list[Token]:
+    return Lexer(src).tokenize()
+
 def print_tokens(tokens: list[Token]):
     for t in tokens:
         print(t.lexeme if t.lexeme else "//", end=" ")
@@ -60,11 +63,11 @@ class Lexer:
                         self.err(f"char type must be one character long", start_col, self.col+1)
                         continue
 
-                    self.add(CHAR, string, self.line, start_col)
+                    self.add(CHAR, string, self.line, start_col, KIND_STRING)
                     continue
                 
                 # String
-                self.add(STRING, string, self.line, start_col)
+                self.add(STRING, string, self.line, start_col, KIND_STRING)
                 continue
 
             # Single and double symbol tokens
@@ -107,7 +110,7 @@ class Lexer:
                     continue
 
                 isfloat = dots == 1
-                self.add(NUMBER, number, self.line, start_col, isfloat)
+                self.add(NUMBER, number, self.line, start_col, isfloat, KIND_NUMBER)
                 continue
             
             if char == "." and nextchar.isdecimal():
@@ -124,7 +127,10 @@ class Lexer:
                 word = char + word
 
                 if word in keyword_lookup:
-                    self.add(keyword_lookup[word], word, self.line, start_col)
+                    kind = KIND_NONE
+                    word_type = keyword_lookup[word]
+                    if word_type in (TRUE, FALSE): kind = KIND_BOOL
+                    self.add(word_type, word, self.line, start_col, kind)
                 else:
                     self.add(IDENTIFIER, word, self.line, start_col)
                 continue
@@ -155,10 +161,10 @@ class Lexer:
         return "", True
 
     # Adds a token to the list
-    def add(self, typ: int, lexeme: str, line: int, col: int, isfloat: int = False):
+    def add(self, typ: int, lexeme: str, line: int, col: int, kind: str = KIND_NONE, isfloat: int = False):
         n = (self.idx, self.string, self.col)
         self.word(lambda _: True)
-        self.tokens.append(Token(typ, lexeme, line, col, self.string, isfloat))
+        self.tokens.append(Token(typ, lexeme, line, col, self.string, kind, isfloat))
         self.idx, self.string, self.col = n
 
     # Go forward one character, returns character

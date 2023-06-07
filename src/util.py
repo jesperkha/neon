@@ -1,11 +1,12 @@
+from tokens import NEWLINE
+
 import os
 if os.name == "nt":
     os.system("color")
 
-from tokens import NEWLINE
-
-def red(text: str) -> str:
-    return f"\033[91m{text}\033[0m"
+def err(msg: str):
+    print(f"ERROR: {msg}")
+    exit(1)
 
 class Error:
     def __init__(self, msg: str, line: int, start: int, end: int, string: str, fatal: bool = False):
@@ -16,8 +17,11 @@ class Error:
         self.fatal = fatal
         self.string = string
 
+    def red(self, text: str) -> str:
+        return f"\033[91m{text}\033[0m"
+
     def print(self):
-        print(f"{red('error:')} {self.msg}, line {self.line}")
+        print(f"{self.red('error:')} {self.msg}, line {self.line}")
         s = self.string
         s = s.replace("\n", "")
         s = s.replace("\t", 4*" ")
@@ -25,7 +29,7 @@ class Error:
         diff = self.end-self.start
         if diff == 0:
             diff = 1
-        print(f" {len(str(self.line))*' '} | " + red(" "*self.start + "^"*(diff)))
+        print(f" {len(str(self.line))*' '} | " + self.red(" "*self.start + "^"*(diff)))
         print()
 
 class ErrorStack:

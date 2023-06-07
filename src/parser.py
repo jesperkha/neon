@@ -2,7 +2,8 @@ from tokens import *
 import ast
 import util
 
-from lexer import print_tokens # Debug
+def parse_tokens(tokens: list[Token]) -> ast.AstNode:
+    return Parser(tokens).parse()
 
 class Parser:
     def __init__(self, tokens: list[Token]):

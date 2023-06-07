@@ -130,11 +130,12 @@ class AstNode:
 
         return ""
 
-class Stmt(AstNode):
+class Stmt:
     pass
 
-class Expr(AstNode):
-    pass
+class Expr:
+    def __init__(self):
+        self.type = None
 
 # ------------ STATEMENTS ------------ 
 
@@ -205,15 +206,18 @@ class Binary(Expr):
 
 class Unary(Expr):
     def __init__(self, expr: Expr, op: Token):
+        super().__init__()
         self.expr = expr
         self.op = op
 
 class Args(Expr):
     def __init__(self, args: list[Expr]):
+        super().__init__()
         self.args = args
 
 class Call(Expr):
     def __init__(self, callee: Expr, inner: Expr):
+        super().__init__()
         self.callee = callee
         self.inner = inner
 
