@@ -20,11 +20,11 @@ class Scanner:
         for stmt in self.tree.stmts:
             self.scan_stmt(stmt)
 
-    def scan_stmt(self, stmt: ast.Stmt):
+    def scan_stmt(self, stmt: ast.Stmt) -> Type:
         t = type(stmt)
 
         if t == ast.ExprStmt:
-            self.scan_expr(stmt.expr)
+            return self.scan_expr(stmt.expr)
 
         util.err(f"scanning for {stmt.__class__.__name__} not implemented")
 
