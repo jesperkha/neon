@@ -1,20 +1,20 @@
 class Token:
     def __init__(self,
-            typ: int,            # Token type
-            lexeme: str,         # Token text lexeme
-            line: int,           # Line number
-            col: int,            # Column
-            string: str,         # Line token is at as a string
-            kind: str,           # Token type kind
-            isfloat: int = False # If token is float
+            typ: int,             # Token type
+            lexeme: str,          # Token text lexeme
+            line: int,            # Line number
+            col: int,             # Column
+            string: str,          # Line token is at as a string
+            kind: str,            # Token type kind
+            isfloat: bool = False # If token is float
         ):
         self.type    = typ
         self.lexeme  = lexeme
         self.line    = line
         self.col     = col
-        self.isfloat = isfloat
         self.string  = string
         self.kind    = kind
+        self.isfloat = isfloat
 
 _i = 0
 def i():

@@ -34,8 +34,23 @@ class Parser:
         v = func()
         self.pop()
         return v
+    
+    def wrap_ast_node(func):
+        def wrap(self):
+            node = func(self)
+            if ast.is_empty(node):
+                return node
+            
+            node.start = self.first.col
+            node.stop = self.last.col + len(self.last.lexeme)
+            node.string = self.first.string
+            node.line = self.line
+            return node
+        
+        return wrap
 
     # Parses single statement
+    @wrap_ast_node
     def stmt(self) -> ast.Stmt:
         # Remove prefixed newline characters
         while self.idx < self.len-1 and self.current.type == NEWLINE:
@@ -116,6 +131,7 @@ class Parser:
         return ast.Block(block.stmts)
 
     # Parses single expression
+    @wrap_ast_node
     def expr(self) -> ast.Expr:
         if self.len == 0:
             return ast.Empty()

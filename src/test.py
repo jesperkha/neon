@@ -13,7 +13,8 @@ def main():
                 tokens = Lexer(test).tokenize()
                 tree   = Parser(tokens).parse()
                 print("success")
-            except: pass
+            except:
+                print("fail")
             test_nr += 1
 
 if __name__ == "__main__":

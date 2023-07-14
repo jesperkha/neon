@@ -7,14 +7,19 @@ def scan_tree(tree: ast.AstNode):
 
 class Type:
     def __init__(self, typ: str, kind: str) -> None:
-        self.kind     = kind
-        self.type_num = typ
+        self.kind = kind
+        self.type = typ
         self.type_str = ""
 
 class Scanner:
     def __init__(self, tree: ast.AstNode) -> None:
         self.tree = tree
         self.def_stack = [{}]
+
+        self.errstack = util.ErrorStack()
+
+    def err(self, msg: str, node):
+        self.errstack.add(util.Error(msg, node.line, node.start, node.stop, node.string, True))
 
     def scan(self):
         for stmt in self.tree.stmts:
@@ -33,6 +38,7 @@ class Scanner:
 
         if t == ast.Literal:
             k = expr.token.kind
+
             if k == KIND_NONE:
                 return Type(TYPE_NULL, KIND_NONE)
 
@@ -44,13 +50,33 @@ class Scanner:
                 return Type(typ, KIND_STRING)
             
             if k == KIND_NUMBER:
-                pass
-
+                typ = TYPE_F32 if expr.token.isfloat else TYPE_I32
+                return Type(typ, KIND_NUMBER)
+            
+            # Todo: scanning for array and struct
             if k == KIND_ARRAY:
                 pass
 
             if k == KIND_STRUCT:
                 pass
+        
+        if t == ast.Binary:
+            left = self.scan_expr(expr.left)
+            right = self.scan_expr(expr.right)
+
+            match_type = left.type == right.type
+            match_kind = left.kind == right.kind
+            op = expr.op.type
+            kind = left.kind
+
+            # Number operations
+            # Todo: (doing) scanning for binary op
+            if match_kind and kind == KIND_NUMBER:
+                if op in (PLUS, MINUS, STAR, SLASH):
+                    if not match_type:
+                        self.err("unmatched types in expression", expr)
+                    
+                    return Type(left.type, kind)
 
         util.err(f"scanning for {expr.__class__.__name__} not implemented")
 

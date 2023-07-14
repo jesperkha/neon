@@ -110,7 +110,7 @@ class Lexer:
                     continue
 
                 isfloat = dots == 1
-                self.add(NUMBER, number, self.line, start_col, isfloat, KIND_NUMBER)
+                self.add(NUMBER, number, self.line, start_col, KIND_NUMBER, isfloat)
                 continue
             
             if char == "." and nextchar.isdecimal():
@@ -147,6 +147,7 @@ class Lexer:
         word = ""
         while self.idx < len(self.source) - 1:
             char = self.next()
+            
             if char == "\n":
                 self.prev()
                 return word, True
@@ -161,7 +162,7 @@ class Lexer:
         return "", True
 
     # Adds a token to the list
-    def add(self, typ: int, lexeme: str, line: int, col: int, kind: str = KIND_NONE, isfloat: int = False):
+    def add(self, typ: int, lexeme: str, line: int, col: int, kind: str = KIND_NONE, isfloat: bool = False):
         n = (self.idx, self.string, self.col)
         self.word(lambda _: True)
         self.tokens.append(Token(typ, lexeme, line, col, self.string, kind, isfloat))

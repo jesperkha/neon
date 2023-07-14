@@ -136,6 +136,10 @@ class Stmt:
 class Expr:
     def __init__(self):
         self.type = None
+        self.line = 0
+        self.start = 0
+        self.stop = 0
+        self.string = ""
 
 # ------------ STATEMENTS ------------ 
 
