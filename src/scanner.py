@@ -53,13 +53,12 @@ class Scanner:
                 typ = TYPE_F32 if expr.token.isfloat else TYPE_I32
                 return Type(typ, KIND_NUMBER)
             
-            # Todo: scanning for array and struct
             if k == KIND_ARRAY:
-                pass
+                util.err("scanning for array not implemented")
 
             if k == KIND_STRUCT:
-                pass
-        
+                util.err("scanning for struct not implemented")
+
         if t == ast.Binary:
             left = self.scan_expr(expr.left)
             right = self.scan_expr(expr.right)

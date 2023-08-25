@@ -68,7 +68,7 @@ class Parser:
         if t == LEFT_BRACE:
             return self.block()
         
-        # Todo: if/else/elif statement
+        # Todo: parse if/else/elif statement
         if t == IF:
             self.err("if statament not implemented yet", True) # Debug
 
@@ -112,7 +112,7 @@ class Parser:
             expr = self.proc(self.seek(NEWLINE), self.expr)
             return ast.Declaration(var[0], expr)
 
-        # Todo: variable declaration with type
+        # Todo: parse variable declaration with type
 
         # Assignment. Left side is expression in case of
         # indexing or struct property, checked in scan.
