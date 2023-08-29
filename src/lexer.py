@@ -1,202 +1,110 @@
 from tokens import *
 import util
 
-def get_tokens(src: str) -> list[Token]:
-    return Lexer(src).tokenize()
+# Todo: proper error messages
 
-def print_tokens(tokens: list[Token]):
-    for t in tokens:
-        print(t.lexeme if t.lexeme else "//", end=" ")
-    print()
+def get_tokens_new(src: str) -> list[Token]:
+    tokens = []
+    start_pos = 0
+    pos = 0
+    line = 1
+    line_string = ""
 
-class Lexer:
-    def __init__(self, source: str):
-        self.tokens = []
-        self.source = source
-        self.line = 1
-        self.col  = -1
-        self.idx  = -1
-        self.string = ""
+    # Read first line
+    for c in src[pos:]:
+        if c == '\n':
+            break
+        line_string += c
+    
+    while pos < len(src):
 
-        self.errstack = util.ErrorStack()
+        # Comment
+        if pos+1 < len(src) and (src[pos:pos+2] == "//"):
+            while pos < len(src) and src[pos] != '\n':
+                pos += 1
+            continue
 
-    def tokenize(self) -> list[Token]:
-        while self.idx < len(self.source) - 1:
-            char = self.next()
-            self.string += char
-            nextchar = "" if self.idx >= len(self.source) - 1 \
-                          else self.source[self.idx+1]
+        # White space
+        if src[pos] in whitespace_lookup:
+            if src[pos] == '\n':
+                tokens.append(Token(NEWLINE, "NEWLINE", line, pos, line_string, KIND_NONE))
+
+                # Read new line
+                line_string = ""
+                for c in src[pos+1:]:
+                    if c == '\n':
+                        break
+                    line_string += c
+                line += 1
+
+            pos += 1
+            continue
+
+        # Identifier
+        if src[pos].isalpha():
+            start_pos = pos
+            while pos < len(src) and (src[pos].isalnum() or src[pos] == '_'):
+                pos += 1
             
-            if char == "\n":
-                self.add(NEWLINE, "", self.line, self.col)
-                self.line += 1
-                self.string = ""
-                self.col = -1
-                continue
-            
-            if char == "\t":
-                self.col += 3
-                self.string += ""
-                continue
-
-            # Non-newline whitespace is ignored
-            if char in whitespace_lookup:
-                continue
-
-            # Parse string and char literals
-            string_chars = ("'", '"')
-            if char in string_chars:
-                start_char = char
-                start_col = self.col
-                string, not_terminated = self.word(lambda c: c != start_char)
-
-                if not_terminated:
-                    self.err(f"unterminated string", start_col, self.col+1)
-                    continue
-
-                self.string += self.next()
-                string = f"{start_char}{string}{start_char}"
-
-                # Char
-                if start_char == "'":
-                    if len(string) != 3:
-                        self.err(f"char type must be one character long", start_col, self.col+1)
-                        continue
-
-                    self.add(CHAR, string, self.line, start_col, KIND_STRING)
-                    continue
-                
-                # String
-                self.add(STRING, string, self.line, start_col, KIND_STRING)
-                continue
-
-            # Single and double symbol tokens
-            if char in symbol_lookup:
-                double = char + nextchar
-
-                # Double token
-                if double in double_token_lookup:
-                    typ = double_token_lookup[double]
-                    
-                    # Skip to end of line for comments
-                    if typ == COMMENT:
-                        self.skip_line()
-                        self.shift()
-                        continue
-
-                    self.add(typ, double, self.string, self.col)
-                    self.string += nextchar
-                    self.next()
-
-                # Single token
-                else:
-                    self.add(symbol_lookup[char], char, self.line, self.col)
-
-                continue
-
-            # Number literals
-            if char.isdecimal():
-                start_col = self.col
-                number, _ = self.word(lambda c: c.isdecimal() or c == ".")
-                number = char + number
-                dots = number.count(".")
-
-                if dots > 1 or number.endswith(".") or number.startswith("."):
-                    self.err(f"invalid number literal", start_col, self.col)
-                    continue
-
-                if not number.replace(".", "").isdecimal():
-                    self.err(f"cannot start variable name with number", start_col, self.col)
-                    continue
-
-                isfloat = dots == 1
-                self.add(NUMBER, number, self.line, start_col, KIND_NUMBER, isfloat)
-                continue
-            
-            if char == "." and nextchar.isdecimal():
-                self.err(f"number literal cannot start with a '.'", self.col, self.col+1)
-                continue
-
-            # Keywords and identifiers
-            ident_symbols_start = ("_", "$")
-            ident_symbols = ("_")
-
-            if char.isalnum() or char in ident_symbols_start:
-                start_col = self.col
-                word, _ = self.word(lambda c: c.isalnum() or c.isdecimal() or c in ident_symbols)
-                word = char + word
-
-                if word in keyword_lookup:
-                    kind = KIND_NONE
-                    word_type = keyword_lookup[word]
-                    if word_type in (TRUE, FALSE): kind = KIND_BOOL
-                    self.add(word_type, word, self.line, start_col, kind)
-                else:
-                    self.add(IDENTIFIER, word, self.line, start_col)
-                continue
-
-            # Fatal: invalid character
-            self.err(f"unexpected token '{char}'", self.col, self.col+1)
-
-        self.errstack.print()
-        return self.tokens
-
-    # Seeks a character that does not satisfy the given end function (returns false).
-    # Returns (word, eof)
-    def word(self, end) -> tuple[str, bool]:
-        word = ""
-        while self.idx < len(self.source) - 1:
-            char = self.next()
-            
-            if char == "\n":
-                self.prev()
-                return word, True
-
-            if not end(char):
-                self.prev()
-                return word, False
-
-            word += char
-            self.string += char
+            word = src[start_pos:pos]
+            if word in keyword_lookup:
+                tokens.append(Token(keyword_lookup[word], word, line, start_pos, line_string, KIND_NONE))
+            elif word in typeword_lookup:
+                tokens.append(Token(IDENTIFIER, word, line, start_pos, line_string, KIND_NONE))
+            else:
+                tokens.append(Token(IDENTIFIER, word, line, start_pos, line_string, KIND_NONE))
+            continue
         
-        return "", True
+        # Number
+        if src[pos].isnumeric():
+            start_pos = pos
+            dots = 0
+            while pos < len(src) and (src[pos].isnumeric() or src[pos] == '.'):
+                if src[pos] == '.':
+                    dots += 1
+                pos += 1
+            
+            if dots > 1:
+                print("INVALID NUMBER ERROR")
 
-    # Adds a token to the list
-    def add(self, typ: int, lexeme: str, line: int, col: int, kind: str = KIND_NONE, isfloat: bool = False):
-        n = (self.idx, self.string, self.col)
-        self.word(lambda _: True)
-        self.tokens.append(Token(typ, lexeme, line, col, self.string, kind, isfloat))
-        self.idx, self.string, self.col = n
+            number = src[start_pos:pos]
+            tokens.append(Token(NUMBER, number, line, start_pos, line_string, KIND_NUMBER, isfloat=dots>0))
+            continue
 
-    # Go forward one character, returns character
-    def next(self) -> str:
-        self.idx += 1
-        self.col += 1
-        if self.idx < len(self.source):
-            return self.source[self.idx]
+        # Double symbol
+        if pos + 1 < len(src):
+            symbol = src[pos:pos+2]
+            if symbol in double_symbol_lookup:
+                start_pos = pos
+                pos += 2
+                tokens.append(Token(double_symbol_lookup[symbol], symbol, line, start_pos, line_string, KIND_NONE))
+                continue
 
-        return ""
+        # Single symbol
+        if src[pos] in symbol_lookup:
+            start_pos = pos
+            symbol = src[pos]
+            pos += 1
+            tokens.append(Token(symbol_lookup[symbol], symbol, line, start_pos, line_string, KIND_NONE))
+            continue
 
-    # Go back one character
-    def prev(self):
-        self.idx -= 1
-        self.col -= 1
+        # Strings
+        if src[pos] == '"':
+            start_pos = pos
+            string = ""
+            pos += 1
+            while pos < len(src) and src[pos] != '"':
+                if src[pos] == '\n':
+                    print("UNTERMINATED STRING ERROR")
 
-    # Skips rest of tokens and seeks newline
-    def skip_line(self):
-        while self.idx < len(self.source) - 1:
-            if self.source[self.idx] == "\n":
-                self.prev()
-                return
-            self.next()
+                string += src[pos]
+                pos += 1
+            
+            if pos >= len(src):
+                print("UNTERMINATED STRING ERROR")
 
-    # Remove first character of string
-    def shift(self):
-        self.string = self.string[1:]
+            pos += 1
+            tokens.append(Token(STRING, string, line, start_pos, line_string, KIND_STRING))
+            continue
 
-    # Add rest of line to self.string before printing error
-    def err(self, msg: str, start_col: int, end_col: int, fatal: bool = False):
-        self.word(lambda _: True)
-        self.errstack.add(util.Error(msg, self.line, start_col, end_col, self.string, fatal))
-        self.skip_line()
-
+    return tokens

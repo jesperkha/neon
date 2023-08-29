@@ -130,16 +130,21 @@ class AstNode:
 
         return ""
 
-class Stmt:
-    pass
-
-class Expr:
+class ParseNode:
     def __init__(self):
         self.type = None
         self.line = 0
         self.start = 0
         self.stop = 0
         self.string = ""
+
+class Stmt(ParseNode):
+    def __init__(self):
+        super().__init__()
+
+class Expr(ParseNode):
+    def __init__(self):
+        super().__init__()
 
 # ------------ STATEMENTS ------------ 
 
@@ -150,24 +155,29 @@ class ExprStmt(Stmt):
 
 class Declaration(Stmt):
     def __init__(self, ident: Token, expr: Expr):
+        super().__init__()
         self.ident = ident
         self.expr = expr
 
 class Assignment(Stmt):
     def __init__(self, left: Expr, expr: Expr):
+        super().__init__()
         self.left = left
         self.expr = expr
 
 class Return(Stmt):
     def __init__(self, expr: Expr):
+        super().__init__()
         self.expr = expr
 
 class Block(Stmt):
     def __init__(self, stmts: list[Stmt]):
+        super().__init__()
         self.stmts = stmts
 
 class Function:
     def __init__(self, name: str, params: list[Param], return_t: Type, body: Block):
+        super().__init__()
         self.name = name
         self.params = params
         self.return_t = return_t
@@ -175,6 +185,7 @@ class Function:
 
 class If:
     def __init__(self, expr: Expr, block: Block) -> None:
+        super().__init__()
         self.expr = expr
         self.block = block
 

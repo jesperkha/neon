@@ -1,4 +1,4 @@
-from lexer import Lexer
+from lexer import get_tokens_new
 from parser import Parser
 
 def main():
@@ -10,7 +10,7 @@ def main():
         for test in cases:
             try:
                 print(f"Case {test_nr}: ", end="")
-                tokens = Lexer(test).tokenize()
+                tokens = get_tokens_new(test)
                 tree   = Parser(tokens).parse()
                 print("success")
             except:

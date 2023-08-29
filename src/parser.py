@@ -102,7 +102,6 @@ class Parser:
             return_t = self.type(True)
             block = self.block()
             return ast.Function(func_name.lexeme, params, return_t, block)
- 
 
         # Variable declaration
         if var := self.seek(COLON_EQUAL):
@@ -142,7 +141,7 @@ class Parser:
         if self.len == 1:
             if t == IDENTIFIER:
                 return ast.Variable(self.current)
-
+            
             return ast.Literal(self.current)
         
         # Argument list expression. Expressions seperated by comma

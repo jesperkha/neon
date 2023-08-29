@@ -235,7 +235,7 @@ symbol_lookup = {
     # "^": BIT_XOR,
 }
 
-double_token_lookup = {
+double_symbol_lookup = {
     "==": EQUAL_EQUAL,
     ">=": GREATER_EQUAL,
     "<=": LESS_EQUAL,
@@ -278,5 +278,5 @@ whitespace_lookup = {
 __lookup = keyword_lookup.copy()
 __lookup.update(typeword_lookup.copy())
 __lookup.update(symbol_lookup.copy())
-__lookup.update(double_token_lookup.copy())
+__lookup.update(double_symbol_lookup.copy())
 all_tokens = {v: k for k, v in __lookup.items()}

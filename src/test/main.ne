@@ -1,1 +1,1 @@
-d.d
+func main(): bool {}

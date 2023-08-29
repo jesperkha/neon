@@ -19,11 +19,10 @@
 
 ## About
 
-Neon is a statically typed language that transpiles to C. The compiler ensures that no undefined C behaviour can occur and will generate template error handlers for unsafe and error-prone code. There are no object oriended features like classes, and data is abstracted as little as possible. Neon aims to be a simple, but powerful language that can interact with C codebases and give a more pleasant user experience. Goodbye segfaults 👋
+Neon is a procedural, statically typed, compiled language made with python.
 
-You can check out the [project status](changelog.md) as well as [feature ideas](ideas.md) that may be added. If you have any recommendations for language features please feel free to create an issue.
-
-If you like the project, consider giving it a star 😉
+[Project status](changelog.md)
+[Feature ideas](ideas.md) (may be added later in the project)
 
 <br>
 
