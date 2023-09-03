@@ -1,7 +1,12 @@
 from tokens import *
 import util
 
-# Todo: proper error messages
+def print_tokens(tokens: list):
+    for t in tokens:
+        print(t.lexeme, end=" ")
+        if t.type == NEWLINE:
+            print()
+    print()
 
 def get_tokens_new(src: str) -> list[Token]:
     tokens = []
@@ -65,7 +70,8 @@ def get_tokens_new(src: str) -> list[Token]:
                 pos += 1
             
             if dots > 1:
-                print("INVALID NUMBER ERROR")
+                util.Error("invalid number", line, start_pos, pos, line_string).print()
+                exit(1)
 
             number = src[start_pos:pos]
             tokens.append(Token(NUMBER, number, line, start_pos, line_string, KIND_NUMBER, isfloat=dots>0))
@@ -95,16 +101,22 @@ def get_tokens_new(src: str) -> list[Token]:
             pos += 1
             while pos < len(src) and src[pos] != '"':
                 if src[pos] == '\n':
-                    print("UNTERMINATED STRING ERROR")
+                    util.Error("unterminated string", line, start_pos, pos, line_string).print()
+                    exit(1)
 
                 string += src[pos]
                 pos += 1
             
             if pos >= len(src):
-                print("UNTERMINATED STRING ERROR")
+                util.Error("unterminated string", line, start_pos, pos, line_string).print()
+                exit(1)
 
             pos += 1
             tokens.append(Token(STRING, string, line, start_pos, line_string, KIND_STRING))
             continue
+
+        start_pos = pos
+        util.syntax_error("unknown token", line, start_pos, pos, line_string)
+        exit(1)
 
     return tokens

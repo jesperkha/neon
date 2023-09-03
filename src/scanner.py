@@ -69,7 +69,7 @@ class Scanner:
             kind = left.kind
 
             # Number operations
-            # Todo: (doing) scanning for binary op
+            # Todo: scanning for binary op
             if match_kind and kind == KIND_NUMBER:
                 if op in (PLUS, MINUS, STAR, SLASH):
                     if not match_type:

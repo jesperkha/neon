@@ -8,7 +8,7 @@ def neon_build(filename: str) -> str:
         tokens = lexer.get_tokens_new(source)
         tree   = parser.parse_tokens(tokens)
         scanner.scan_tree(tree)
-        # tree.print()
+        tree.print()
 
 if __name__ == "__main__":
     neon_build("test/main.ne")

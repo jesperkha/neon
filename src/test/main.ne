@@ -1,1 +1,2 @@
-func main(): bool {}
+func mai ? n(): bool {}
+a + b == c
