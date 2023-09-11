@@ -5,7 +5,7 @@ import scanner
 def neon_build(filename: str) -> str:
     with open(filename) as f:
         source = f.read()
-        tokens = lexer.get_tokens_new(source)
+        tokens = lexer.get_tokens(source)
         tree   = parser.parse_tokens(tokens)
         scanner.scan_tree(tree)
         tree.print()

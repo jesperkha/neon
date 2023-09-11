@@ -8,7 +8,7 @@ def print_tokens(tokens: list):
             print()
     print()
 
-def get_tokens_new(src: str) -> list[Token]:
+def get_tokens(src: str) -> list[Token]:
     tokens = []
     start_pos = 0
     pos = 0
