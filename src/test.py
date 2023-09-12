@@ -1,5 +1,8 @@
+import util
 from lexer import get_tokens
+from parser import parse_tokens
 from tokens import *
+import ast
 
 cases = []
 
@@ -14,13 +17,11 @@ class TestFunction:
         self.name = func.__name__
     
     def __call__(self):
-        print(f"{self.name} ", end="")
         try:
             self.func()
-            print("pass")
+            print(f"[ {util.green('pass')} ] {self.name}")
         except RuntimeError as err:
-            print(f"failed")
-            print(err)
+            print(f"[ {util.red('fail')} ] {self.name} {util.red(str(err))}")
 
 
 @test_func
@@ -43,6 +44,31 @@ def TestTokenGeneration():
             b = check[i].__getattribute__(attr)
             if a != b:
                 raise RuntimeError(f"expected {attr} {b}, got {a}, input: {t.lexeme}")
+
+
+@test_func
+def TestExpressionParsing():
+    # Todo: implement tree signature function
+
+    cases = [
+        "a + b",
+        "(a + b) - c",
+        "-a - -b",
+        "foo(a, (b, c) + d)",
+    ]
+
+    for case in cases:
+        tokens = get_tokens(case)
+        tree = parse_tokens(tokens)
+
+
+@test_func
+def TestStatementParsing():
+    pass
+
+@test_func
+def TestBlockParsing():
+    pass
     
 
 if __name__ == "__main__":

@@ -279,8 +279,9 @@ class Parser:
             string, line = point.string, point.line
 
         if self.eof: first += 1
-        error = util.Error(msg, line, first, last, string, fatal)
+        error = util.Error(msg, line, first, last, string)
         self.errstack.add(error)
+        self.errstack.print() # Todo: redo error handling
 
     # Highlights specified token range in error
     def range_err(self, msg: str, tokens: list[Token], fatal: bool = False):

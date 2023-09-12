@@ -17,6 +17,10 @@ def red(text: str) -> str:
 def yellow(text: str) -> str:
     return f"\033[33m{text}\033[0m"
 
+def green(text: str):
+    return f"\033[32m{text}\033[0m"
+
+
 def syntax_error(msg: str, line: int, start: int, end: int, string: str):
     print(f"{red('error:')} {msg}, line {line}")
     print(f" {line} | " + string.replace("\n", "").replace("\t", 4*" "))
