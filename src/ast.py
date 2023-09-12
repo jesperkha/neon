@@ -15,6 +15,7 @@ class AstNode:
         self.stmts = []
         self.indent = 0
 
+    # Todo: rewrite syntax tree print function
     def print(self):
         for node in self.stmts:
             self.indent = -1

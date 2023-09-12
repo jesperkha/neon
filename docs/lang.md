@@ -1,5 +1,3 @@
-<!-- Todo: rewrite documentation -->
-
 # Neon Language Documentation
 
 > **DISCLAIMER:** None of these features have been added yet since the compiler is not finished. However, all of these features will be present in the final product
