@@ -1,4 +1,6 @@
 from lexer import get_tokens
+from parser import parse_tokens
+
 from tokens import *
 import util
 
@@ -45,22 +47,25 @@ def TestTokenGeneration():
 
 @test_func
 def TestExpressionParsing():
-    raise RuntimeError("not implemented")
     cases = [
-        "a + b",
-        "(a + b) - c",
-        "-a - -b",
-        "foo(a, (b, c) + d)",
+        ("a + b", "EBVTVTT"),
+        ("(a + b) - c", "EBGBVTVTTVTT"),
+        ("-a - -b", "EBUVTTVUTTT"),
+        ("foo(a, bar(b, c) + d)", "ECVTAVTBCVTAVTVTVTT"),
     ]
+
+    for case in cases:
+        tokens = get_tokens(case[0])
+        tree = parse_tokens(tokens)
+        sign = tree.stmts[0].signature.short()
+        if sign != case[1]:
+            raise RuntimeError(f"expected signature {case[1]}, got {sign}, input: {case[0]}")
+
 
 @test_func
 def TestStatementParsing():
     raise RuntimeError("not implemented")
 
-@test_func
-def TestBlockParsing():
-    raise RuntimeError("not implemented")
-    
 
 if __name__ == "__main__":
     for c in cases:
