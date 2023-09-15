@@ -1,14 +1,14 @@
-import util
 from lexer import get_tokens
 from parser import parse_tokens
+
 from tokens import *
-import ast
+import util
 
 cases = []
 
 def test_func(func):
     cases.append(TestFunction(func))
-    return None
+    return func
 
 
 class TestFunction:
@@ -26,20 +26,19 @@ class TestFunction:
 
 @test_func
 def TestTokenGeneration():
-    text = 'abc 123 1.0 "hello"'
+    text = 'abc 123 \n1.0 "hello"'
     tokens = get_tokens(text)
 
     check = [
-        Token(IDENTIFIER, "abc", 0, 0, "", KIND_NONE),
-        Token(NUMBER, "123", 0, 0, "", KIND_NUMBER),
-        Token(NUMBER, "1.0", 0, 0, "", KIND_NUMBER, True),
-        Token(STRING, 'hello', 0, 0, "", KIND_STRING),
+        Token(IDENTIFIER, "abc", 1, 0, text[:8], KIND_NONE),
+        Token(NUMBER, "123", 1, 4, text[:8], KIND_NUMBER),
+        Token(NEWLINE, "NEWLINE", 1, 8, text[:8], KIND_NONE),
+        Token(NUMBER, "1.0", 2, 0, text[9:], KIND_NUMBER, True),
+        Token(STRING, 'hello', 2, 4, text[9:], KIND_STRING),
     ]
-
-    test_attributes = ["type", "kind", "lexeme", "isfloat"]
     
     for i, t in enumerate(tokens):
-        for attr in test_attributes:
+        for attr in t.__dict__.keys():
             a = t.__getattribute__(attr)
             b = check[i].__getattribute__(attr)
             if a != b:
@@ -48,28 +47,25 @@ def TestTokenGeneration():
 
 @test_func
 def TestExpressionParsing():
-    # Todo: implement tree signature function
-
     cases = [
-        "a + b",
-        "(a + b) - c",
-        "-a - -b",
-        "foo(a, (b, c) + d)",
+        ("a + b", "EBVTVTT"),
+        ("(a + b) - c", "EBGBVTVTTVTT"),
+        ("-a - -b", "EBUVTTVUTTT"),
+        ("foo(a, bar(b, c) + d)", "ECVTAVTBCVTAVTVTVTT"),
     ]
 
     for case in cases:
-        tokens = get_tokens(case)
+        tokens = get_tokens(case[0])
         tree = parse_tokens(tokens)
+        sign = tree.stmts[0].signature.short()
+        if sign != case[1]:
+            raise RuntimeError(f"expected signature {case[1]}, got {sign}, input: {case[0]}")
 
 
 @test_func
 def TestStatementParsing():
-    pass
+    raise RuntimeError("not implemented")
 
-@test_func
-def TestBlockParsing():
-    pass
-    
 
 if __name__ == "__main__":
     for c in cases:

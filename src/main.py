@@ -2,7 +2,7 @@ import lexer
 import parser
 import scanner
 
-def neon_build(filename: str) -> str:
+def main(filename: str) -> str:
     with open(filename) as f:
         source = f.read()
         tokens = lexer.get_tokens(source)
@@ -11,4 +11,4 @@ def neon_build(filename: str) -> str:
         tree.print()
 
 if __name__ == "__main__":
-    neon_build("test/main.ne")
+    main("../main.ne")
