@@ -26,20 +26,19 @@ class TestFunction:
 
 @test_func
 def TestTokenGeneration():
-    text = 'abc 123 1.0 "hello"'
+    text = 'abc 123 \n 1.0 "hello"'
     tokens = get_tokens(text)
 
     check = [
-        Token(IDENTIFIER, "abc", 0, 0, "", KIND_NONE),
-        Token(NUMBER, "123", 0, 0, "", KIND_NUMBER),
-        Token(NUMBER, "1.0", 0, 0, "", KIND_NUMBER, True),
-        Token(STRING, 'hello', 0, 0, "", KIND_STRING),
+        Token(IDENTIFIER, "abc", 1, 0, text[:8], KIND_NONE),
+        Token(NUMBER, "123", 1, 4, text[:8], KIND_NUMBER),
+        Token(NEWLINE, "NEWLINE", 1, 8, text[:8], KIND_NONE),
+        Token(NUMBER, "1.0", 2, 0, text[9:], KIND_NUMBER, True),
+        Token(STRING, 'hello', 2, 4, text[9:], KIND_STRING),
     ]
-
-    test_attributes = ["type", "kind", "lexeme", "isfloat"]
     
     for i, t in enumerate(tokens):
-        for attr in test_attributes:
+        for attr in t.__dict__.keys():
             a = t.__getattribute__(attr)
             b = check[i].__getattribute__(attr)
             if a != b:
@@ -49,7 +48,6 @@ def TestTokenGeneration():
 @test_func
 def TestExpressionParsing():
     # Todo: implement tree signature function
-
     cases = [
         "a + b",
         "(a + b) - c",
