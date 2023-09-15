@@ -11,4 +11,4 @@ def neon_build(filename: str) -> str:
         tree.print()
 
 if __name__ == "__main__":
-    neon_build("test/main.ne")
+    neon_build("../main.ne")
