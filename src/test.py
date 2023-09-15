@@ -26,7 +26,7 @@ class TestFunction:
 
 @test_func
 def TestTokenGeneration():
-    text = 'abc 123 \n 1.0 "hello"'
+    text = 'abc 123 \n1.0 "hello"'
     tokens = get_tokens(text)
 
     check = [

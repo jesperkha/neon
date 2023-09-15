@@ -10,113 +10,118 @@ def print_tokens(tokens: list):
 
 def get_tokens(src: str) -> list[Token]:
     tokens = []
-    start_pos = 0
-    pos = 0
+    start_idx = 0
+    idx = 0
+    col = 0
     line = 1
     line_string = ""
 
     # Read first line
-    for c in src[pos:]:
+    for c in src[idx:]:
         if c == '\n':
             break
         line_string += c
     
-    while pos < len(src):
+    while idx < len(src):
 
         # Comment
-        if pos+1 < len(src) and (src[pos:pos+2] == "//"):
-            while pos < len(src) and src[pos] != '\n':
-                pos += 1
+        if idx+1 < len(src) and (src[idx:idx+2] == "//"):
+            while idx < len(src) and src[idx] != '\n':
+                idx += 1
             continue
 
         # White space
-        if src[pos] in whitespace_lookup:
-            if src[pos] == '\n':
-                tokens.append(Token(NEWLINE, "NEWLINE", line, pos, line_string, KIND_NONE))
+        if src[idx] in whitespace_lookup:
+            if src[idx] == '\n':
+                tokens.append(Token(NEWLINE, "NEWLINE", line, col, line_string, KIND_NONE))
 
                 # Read new line
                 line_string = ""
-                for c in src[pos+1:]:
+                for c in src[idx+1:]:
                     if c == '\n':
                         break
                     line_string += c
                 line += 1
+                col = -1
 
-            pos += 1
+            idx += 1
+            col += 1
             continue
 
         # Identifier
-        if src[pos].isalpha():
-            start_pos = pos
-            while pos < len(src) and (src[pos].isalnum() or src[pos] == '_'):
-                pos += 1
+        if src[idx].isalpha():
+            start_idx = idx
+            while idx < len(src) and (src[idx].isalnum() or src[idx] == '_'):
+                idx += 1
             
-            word = src[start_pos:pos]
+            word = src[start_idx:idx]
             if word in keyword_lookup:
-                tokens.append(Token(keyword_lookup[word], word, line, start_pos, line_string, KIND_NONE))
+                tokens.append(Token(keyword_lookup[word], word, line, col, line_string, KIND_NONE))
             elif word in typeword_lookup:
-                tokens.append(Token(IDENTIFIER, word, line, start_pos, line_string, KIND_NONE))
+                tokens.append(Token(IDENTIFIER, word, line, col, line_string, KIND_NONE))
             else:
-                tokens.append(Token(IDENTIFIER, word, line, start_pos, line_string, KIND_NONE))
+                tokens.append(Token(IDENTIFIER, word, line, col, line_string, KIND_NONE))
+            
+            col += len(word)
             continue
         
         # Number
-        if src[pos].isnumeric():
-            start_pos = pos
+        if src[idx].isnumeric():
+            start_idx = idx
             dots = 0
-            while pos < len(src) and (src[pos].isnumeric() or src[pos] == '.'):
-                if src[pos] == '.':
+            while idx < len(src) and (src[idx].isnumeric() or src[idx] == '.'):
+                if src[idx] == '.':
                     dots += 1
-                pos += 1
+                idx += 1
             
             if dots > 1:
-                util.Error("invalid number", line, start_pos, pos, line_string).print()
+                util.Error("invalid number", line, start_idx, idx, line_string).print()
                 exit(1)
 
-            number = src[start_pos:pos]
-            tokens.append(Token(NUMBER, number, line, start_pos, line_string, KIND_NUMBER, isfloat=dots>0))
+            number = src[start_idx:idx]
+            tokens.append(Token(NUMBER, number, line, col, line_string, KIND_NUMBER, isfloat=dots>0))
+            col += len(number)
             continue
 
         # Double symbol
-        if pos + 1 < len(src):
-            symbol = src[pos:pos+2]
+        if idx + 1 < len(src):
+            symbol = src[idx:idx+2]
             if symbol in double_symbol_lookup:
-                start_pos = pos
-                pos += 2
-                tokens.append(Token(double_symbol_lookup[symbol], symbol, line, start_pos, line_string, KIND_NONE))
+                tokens.append(Token(double_symbol_lookup[symbol], symbol, line, col, line_string, KIND_NONE))
+                idx += 2
+                col += 2
                 continue
 
         # Single symbol
-        if src[pos] in symbol_lookup:
-            start_pos = pos
-            symbol = src[pos]
-            pos += 1
-            tokens.append(Token(symbol_lookup[symbol], symbol, line, start_pos, line_string, KIND_NONE))
+        if src[idx] in symbol_lookup:
+            symbol = src[idx]
+            tokens.append(Token(symbol_lookup[symbol], symbol, line, col, line_string, KIND_NONE))
+            idx += 1
+            col += 1
             continue
 
         # Strings
-        if src[pos] == '"':
-            start_pos = pos
+        if src[idx] == '"':
             string = ""
-            pos += 1
-            while pos < len(src) and src[pos] != '"':
-                if src[pos] == '\n':
-                    util.Error("unterminated string", line, start_pos, pos, line_string).print()
+            idx += 1
+            while idx < len(src) and src[idx] != '"':
+                if src[idx] == '\n':
+                    util.Error("unterminated string", line, col, idx, line_string).print()
                     exit(1)
 
-                string += src[pos]
-                pos += 1
+                string += src[idx]
+                idx += 1
             
-            if pos >= len(src):
-                util.Error("unterminated string", line, start_pos, pos, line_string).print()
+            if idx >= len(src):
+                util.Error("unterminated string", line, col, idx, line_string).print()
                 exit(1)
 
-            pos += 1
-            tokens.append(Token(STRING, string, line, start_pos, line_string, KIND_STRING))
+            tokens.append(Token(STRING, string, line, col, line_string, KIND_STRING))
+            idx += 1
+            col += len(string) + 2
             continue
 
-        start_pos = pos
-        util.syntax_error("unknown token", line, start_pos, pos, line_string)
+        util.syntax_error("unknown token", line, col, idx, line_string)
         exit(1)
 
     return tokens
