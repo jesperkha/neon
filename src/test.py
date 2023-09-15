@@ -1,14 +1,12 @@
-import util
 from lexer import get_tokens
-from parser import parse_tokens
 from tokens import *
-import ast
+import util
 
 cases = []
 
 def test_func(func):
     cases.append(TestFunction(func))
-    return None
+    return func
 
 
 class TestFunction:
@@ -47,7 +45,7 @@ def TestTokenGeneration():
 
 @test_func
 def TestExpressionParsing():
-    # Todo: implement tree signature function
+    raise RuntimeError("not implemented")
     cases = [
         "a + b",
         "(a + b) - c",
@@ -55,18 +53,13 @@ def TestExpressionParsing():
         "foo(a, (b, c) + d)",
     ]
 
-    for case in cases:
-        tokens = get_tokens(case)
-        tree = parse_tokens(tokens)
-
-
 @test_func
 def TestStatementParsing():
-    pass
+    raise RuntimeError("not implemented")
 
 @test_func
 def TestBlockParsing():
-    pass
+    raise RuntimeError("not implemented")
     
 
 if __name__ == "__main__":
