@@ -1,3 +1,5 @@
+from hashlib import sha256
+
 class Token:
     def __init__(self,
             typ: int,             # Token type
@@ -15,6 +17,36 @@ class Token:
         self.string  = string
         self.kind    = kind
         self.isfloat = isfloat
+
+
+class Signature:
+    def __init__(self, some: object = None):
+        self.sign = ""
+        if some:
+            self.add(some)
+    
+    def add(self, some: object):
+        if hasattr(some, "signature"):
+            self.add(some.signature)
+        elif type(some) == list:
+            for n in some:
+                self.add(n)
+        elif type(some) == Signature:
+            self.sign += f"{some.sign}"
+        elif type(some) == str:
+            self.sign += f".{some}"
+        else:
+            self.sign += f".{type(some).__name__}"
+    
+    def hash(self) -> str:
+        return sha256(self.sign.encode("utf-8")).hexdigest()
+    
+    def __str__(self) -> str:
+        return self.sign
+
+    def __eq__(self, __value: object) -> bool:
+        return self.sign == __value.sign
+    
 
 _i = 0
 def i():

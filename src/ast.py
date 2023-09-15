@@ -132,7 +132,10 @@ class AstNode:
         return ""
 
 class ParseNode:
-    def __init__(self):
+    def __init__(self, *args):
+        self.signature = Signature(self)
+        for a in args:
+            self.signature.add(a)
         self.type = None
         self.line = 0
         self.start = 0
@@ -140,45 +143,45 @@ class ParseNode:
         self.string = ""
 
 class Stmt(ParseNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args):
+        super().__init__(*args)
 
 class Expr(ParseNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args):
+        super().__init__(*args)
 
 # ------------ STATEMENTS ------------ 
 
 class ExprStmt(Stmt):
     def __init__(self, expr: Expr):
-        super().__init__()
+        super().__init__(expr)
         self.expr = expr
 
 class Declaration(Stmt):
     def __init__(self, ident: Token, expr: Expr):
-        super().__init__()
+        super().__init__(ident, expr)
         self.ident = ident
         self.expr = expr
 
 class Assignment(Stmt):
     def __init__(self, left: Expr, expr: Expr):
-        super().__init__()
+        super().__init__(left, expr)
         self.left = left
         self.expr = expr
 
 class Return(Stmt):
     def __init__(self, expr: Expr):
-        super().__init__()
+        super().__init__(expr)
         self.expr = expr
 
 class Block(Stmt):
     def __init__(self, stmts: list[Stmt]):
-        super().__init__()
+        super().__init__(stmts)
         self.stmts = stmts
 
-class Function:
+class Function(Stmt):
     def __init__(self, name: str, params: list[Param], return_t: Type, body: Block):
-        super().__init__()
+        super().__init__(name, params, return_t, body)
         self.name = name
         self.params = params
         self.return_t = return_t
@@ -186,7 +189,7 @@ class Function:
 
 class If:
     def __init__(self, expr: Expr, block: Block) -> None:
-        super().__init__()
+        super().__init__(expr, block)
         self.expr = expr
         self.block = block
 
@@ -200,40 +203,40 @@ class Empty(Expr):
 
 class Literal(Expr):
     def __init__(self, tok: Token):
-        super().__init__()
+        super().__init__(tok)
         self.token = tok
 
 class Variable(Expr):
     def __init__(self, tok: Token):
-        super().__init__()
+        super().__init__(tok)
         self.token = tok
 
 class Group(Expr):
     def __init__(self, inner: Expr):
-        super().__init__()
+        super().__init__(inner)
         self.inner = inner
 
 class Binary(Expr):
     def __init__(self, left: Expr, right: Expr, op: Token):
-        super().__init__()
+        super().__init__(left, right, op)
         self.left = left
         self.right = right
         self.op = op
 
 class Unary(Expr):
     def __init__(self, expr: Expr, op: Token):
-        super().__init__()
+        super().__init__(expr, op)
         self.expr = expr
         self.op = op
 
 class Args(Expr):
     def __init__(self, args: list[Expr]):
-        super().__init__()
+        super().__init__(args)
         self.args = args
 
 class Call(Expr):
     def __init__(self, callee: Expr, inner: Expr):
-        super().__init__()
+        super().__init__(callee, inner)
         self.callee = callee
         self.inner = inner
 
