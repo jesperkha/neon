@@ -38,8 +38,15 @@ class Signature:
         else:
             self.sign += f".{type(some).__name__}"
     
+    # Returns the sha256 hexadecimal value of the signature
     def hash(self) -> str:
         return sha256(self.sign.encode("utf-8")).hexdigest()
+    
+    # Returns the short representation of the signature
+    def short(self) -> str:
+        s = self.sign.split(".")
+        t = [c[0].upper() if len(c) != 0 else "" for c in s]
+        return "".join(t)
     
     def __str__(self) -> str:
         return self.sign
