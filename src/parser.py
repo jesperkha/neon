@@ -3,11 +3,17 @@ from error import *
 import ast
 
 def parse_tokens(tokens: list[Token]) -> ast.AstNode:
-    return Parser(tokens).parse()
+    parser = Parser(tokens)
+    tree = parser.parse()
+    if parser.err_count != 0:
+        exit(1)
+    
+    return tree
 
 class Parser:
     def __init__(self, tokens: list[Token]):
         self.line = 1
+        self.err_count = 0
         # Current token list that is being parsed. Expressions usually
         # have recursive calls so a token list stack gives depth without
         # recursion and creating multiple objects.
@@ -24,6 +30,7 @@ class Parser:
             try:
                 tree.stmts.append(self.stmt())
             except NeonSyntaxError as err:
+                self.err_count += 1
                 self.idxs = [self.idxs[0]]
                 self.list = [self.list[0]]
                 self.ptr = 0
@@ -220,6 +227,8 @@ class Parser:
         self.ptr += 1
 
     def pop(self):
+        if self.ptr == 0:
+            return
         self.list.pop()
         self.idxs.pop()
         self.ptr -= 1
