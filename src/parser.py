@@ -1,15 +1,13 @@
 from tokens import *
+from error import *
 import ast
-import util
 
 def parse_tokens(tokens: list[Token]) -> ast.AstNode:
     return Parser(tokens).parse()
 
 class Parser:
     def __init__(self, tokens: list[Token]):
-        self.errstack = util.ErrorStack()
         self.line = 1
-
         # Current token list that is being parsed. Expressions usually
         # have recursive calls so a token list stack gives depth without
         # recursion and creating multiple objects.
@@ -23,9 +21,14 @@ class Parser:
     def parse(self) -> ast.AstNode:
         tree = ast.AstNode()
         while self.idx < self.len:
-            tree.stmts.append(self.stmt())
+            try:
+                tree.stmts.append(self.stmt())
+            except NeonSyntaxError as err:
+                self.idxs = [self.idxs[0]]
+                self.list = [self.list[0]]
+                self.ptr = 0
+                print(err)
 
-        self.errstack.print()
         return tree
 
     # Shorthand for invoking a procedure on a new stack frame
@@ -279,9 +282,7 @@ class Parser:
             string, line = point.string, point.line
 
         if self.eof: first += 1
-        error = util.Error(msg, line, first, last, string)
-        self.errstack.add(error)
-        self.errstack.print() # Todo: redo error handling
+        raise NeonSyntaxError(msg, line, first, last, string)
 
     # Highlights specified token range in error
     def range_err(self, msg: str, tokens: list[Token], fatal: bool = False):

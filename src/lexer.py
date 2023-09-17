@@ -1,5 +1,5 @@
 from tokens import *
-import util
+from error import *
 
 def print_tokens(tokens: list):
     for t in tokens:
@@ -8,10 +8,12 @@ def print_tokens(tokens: list):
             print()
     print()
 
+@error_prone
 def get_tokens(src: str) -> list[Token]:
     tokens = []
     start_idx = 0
     idx = 0
+    start_col = 0
     col = 0
     line = 1
     line_string = ""
@@ -68,19 +70,19 @@ def get_tokens(src: str) -> list[Token]:
         # Number
         if src[idx].isnumeric():
             start_idx = idx
+            start_col = col
             dots = 0
             while idx < len(src) and (src[idx].isnumeric() or src[idx] == '.'):
                 if src[idx] == '.':
                     dots += 1
                 idx += 1
+                col += 1
             
             if dots > 1:
-                util.Error("invalid number", line, start_idx, idx, line_string).print()
-                exit(1)
+                raise NeonSyntaxError("invalid number", line, start_col, col, line_string)
 
             number = src[start_idx:idx]
-            tokens.append(Token(NUMBER, number, line, col, line_string, KIND_NUMBER, isfloat=dots>0))
-            col += len(number)
+            tokens.append(Token(NUMBER, number, line, start_col, line_string, KIND_NUMBER, isfloat=dots>0))
             continue
 
         # Double symbol
@@ -103,25 +105,25 @@ def get_tokens(src: str) -> list[Token]:
         # Strings
         if src[idx] == '"':
             string = ""
+            start_col = col
             idx += 1
+            col += 1
             while idx < len(src) and src[idx] != '"':
                 if src[idx] == '\n':
-                    util.Error("unterminated string", line, col, idx, line_string).print()
-                    exit(1)
+                    raise NeonSyntaxError("unterminated string", line, start_col, col, line_string)
 
                 string += src[idx]
                 idx += 1
+                col += 1
             
             if idx >= len(src):
-                util.Error("unterminated string", line, col, idx, line_string).print()
-                exit(1)
+                raise NeonSyntaxError("unterminated string", line, start_col, col, line_string)
 
-            tokens.append(Token(STRING, string, line, col, line_string, KIND_STRING))
+            tokens.append(Token(STRING, string, line, start_col, line_string, KIND_STRING))
             idx += 1
-            col += len(string) + 2
+            col += 1
             continue
 
-        util.syntax_error("unknown token", line, col, idx, line_string)
-        exit(1)
+        raise NeonSyntaxError("unknown token", line, col, col, line_string)
 
     return tokens
