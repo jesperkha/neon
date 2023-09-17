@@ -28,29 +28,3 @@ def syntax_error(msg: str, line: int, start: int, end: int, string: str):
     print(f" {len(str(line))*' '} | " + red(" "*start + "^"*diff))
     print()
 
-class Error:
-    def __init__(self, msg: str, line: int, start: int, end: int, string: str):
-        self.msg = msg
-        self.line = line
-        self.start = start
-        self.end = end
-        self.string = string
-
-    def print(self):
-        syntax_error(self.msg, self.line, self.start, self.end, self.string)
-
-class ErrorStack:
-    def __init__(self):
-        self.errors = []
-
-    def add(self, err: Error, fatal: bool = False):
-        self.errors.append(err)
-        if fatal:
-            self.print()
-
-    def print(self):
-        for e in self.errors:
-            e.print()
-        if len(self.errors) > 0:
-            exit(1)
-
