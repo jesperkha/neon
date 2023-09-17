@@ -1,9 +1,14 @@
 from tokens import *
 
 class Type:
-    def __init__(self, string: str, user_def: bool = False):
-        self.string = string
+    def __init__(self, typ: str, user_def: bool = False) -> None:
+        self.type = typ
         self.user_def = user_def
+        self.string = typ
+        if not user_def:
+            self.kind = type_to_kind[typ]
+        else:
+            self.kind = KIND_NONE
 
 class Param:
     def __init__(self, name: str, typ: Type):
