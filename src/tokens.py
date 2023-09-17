@@ -180,28 +180,6 @@ NUMBER_KINDS = (
     TYPE_BYTE
 )
 
-STRING_KINDS = (
-    TYPE_STRING,
-    TYPE_CHAR
-)
-
-BOOL_KINDS = (
-    TYPE_BOOL
-)
-
-ARRAY_KINDS = (
-    TYPE_ARRAY
-)
-
-STRUCT_KINDS = (
-    TYPE_STRUCT
-)
-
-NONE_KINDS = (
-    TYPE_NONE,
-    TYPE_NULL
-)
-
 KIND_NONE   = "K_NONE"
 KIND_STRING = "K_STRING"
 KIND_NUMBER = "K_NUMBER"
@@ -209,14 +187,18 @@ KIND_BOOL   = "K_BOOL"
 KIND_ARRAY  = "K_ARRAY"
 KIND_STRUCT = "K_STRUCT"
 
-type_to_kind = {
+kind_to_types = {
     KIND_NUMBER: NUMBER_KINDS,
-    KIND_STRING: STRUCT_KINDS,
-    KIND_BOOL: BOOL_KINDS,
-    KIND_ARRAY: ARRAY_KINDS,
-    KIND_STRUCT: STRUCT_KINDS,
-    KIND_NONE: NONE_KINDS
+    KIND_STRING: [TYPE_STRING, TYPE_CHAR],
+    KIND_BOOL: [TYPE_BOOL],
+    KIND_ARRAY: [TYPE_ARRAY],
+    KIND_STRUCT: [TYPE_STRUCT],
+    KIND_NONE: [TYPE_NONE, TYPE_NULL],
 }
+
+type_to_kind = {}
+for k, v in kind_to_types.items():
+    for t in v: type_to_kind[t] = k
 
 keyword_lookup = {
     "return": RETURN,
